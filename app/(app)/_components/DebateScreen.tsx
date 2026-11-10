@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { ChevronLeftIcon } from "lucide-react";
 import type { Advisor, Offer, ProductCard } from "@/lib/types";
 import { Pixel } from "@/components/pixel/Pixel";
-import { Said } from "@/components/pixel/Speech";
+import { Speech } from "@/components/pixel/Speech";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { useDebate, type DebateState } from "../_lib/useDebate";
@@ -82,9 +82,11 @@ function Trouble({ state, onRetry, onBack }: { state: DebateState; onRetry: () =
           <Pixel who="spark" state="sulk" scale={3} />
           <Pixel who="penny" state={busy ? "think" : "sulk"} scale={3} />
         </div>
-        <Said who="penny" state={busy ? "think" : "sulk"} scale={1} live>
-          {state.errorLine}
-        </Said>
+        <div className="flex">
+          <Speech who="penny" live>
+            {state.errorLine}
+          </Speech>
+        </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={onRetry} className="h-11 px-4 sm:h-9">
             Try again
