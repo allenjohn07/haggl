@@ -12,10 +12,6 @@ const CARDS: ProductCard[] = [
   { id: "fx-hp-5", title: "Premium Noise Cancelling Earbuds, Wireless Charging Case", brand: "Aurel Audio", rating: { score: 4.4, count: 1873 }, bestOffer: offer("fx-hp-5", "amazon.com", 199.99), offerCount: 3 },
 ];
 
-export function mockSearch(): Response {
-  return Response.json({ products: CARDS });
-}
-
 const waiters = new Map<string, (answer: string) => void>();
 
 export function mockAnswer(askId: string, answer: string): Response {

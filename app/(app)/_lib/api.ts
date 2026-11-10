@@ -1,4 +1,4 @@
-import { mockAnswer, mockBuy, mockDebate, mockSearch } from "./mock";
+import { mockAnswer, mockBuy, mockDebate } from "./mock";
 
 // The four calls the page makes. In development, NEXT_PUBLIC_HAGGL_MOCK=1 swaps in a local replay.
 const MOCK = process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_HAGGL_MOCK === "1";
@@ -8,7 +8,7 @@ function post(url: string, body: unknown, signal?: AbortSignal) {
 }
 
 export const api = {
-  search: (query: string) => (MOCK ? Promise.resolve(mockSearch()) : post("/api/search", { query })),
+  search: (query: string) => post("/api/search", { query }),
   debate: (productId: string, offerId: string, signal: AbortSignal) =>
     MOCK ? Promise.resolve(mockDebate(productId)) : post("/api/debate", { productId, offerId }, signal),
   answer: (debateId: string, askId: string, answer: string) =>

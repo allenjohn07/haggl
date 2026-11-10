@@ -5,12 +5,11 @@ import type { ProductCard } from "@/lib/types";
 import { Pixel } from "@/components/pixel/Pixel";
 import { Speech } from "@/components/pixel/Speech";
 import { LINES, pickLine } from "@/data/lines";
+import { SUGGESTIONS } from "@/data/fixtures/suggestions";
 import { api } from "../_lib/api";
 import { money, store } from "../_lib/format";
 import { ProductImage } from "./ProductImage";
 
-// Same six as data/fixtures/suggestions.ts (search lane); each one has fixture results.
-const SUGGESTIONS = ["noise cancelling headphones", "espresso machine", "running shoes", "mechanical keyboard", "air fryer", "standing desk"];
 
 type Status = "idle" | "searching" | "done" | "empty" | "failed" | "busy";
 
