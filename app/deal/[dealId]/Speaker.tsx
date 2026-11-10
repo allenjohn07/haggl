@@ -1,11 +1,15 @@
-// A character's name tag and speech bubble, as plain HTML text.
-// ui lane: drop the pixel character (components/pixel) in the marked slot when it lands.
-export function Speaker({ name, line }: { name: string; line: string }) {
+import { PixelCharacter, type CharState, type CharacterId } from "@/components/pixel";
+
+const IDS: Record<string, CharacterId> = { Bao: "bao", "Mr. Pickle": "pickle", Beanie: "beanie" };
+
+// A character's pixel sprite, name tag and speech bubble (the text is plain HTML).
+export function Speaker({ name, line, state = "idle" }: { name: string; line: string; state?: CharState }) {
+  const id = IDS[name];
   return (
     <div className="flex items-start gap-3">
-      {/* pixel character slot */}
-      <span className="shrink-0 rounded-full bg-black/5 px-3 py-1 text-xs font-semibold dark:bg-white/10">
-        {name}
+      <span className="flex shrink-0 flex-col items-center gap-1">
+        {id && <PixelCharacter id={id} state={state} scale={2} />}
+        <span className="rounded-full bg-black/5 px-3 py-1 text-xs font-semibold dark:bg-white/10">{name}</span>
       </span>
       <p className="rounded-2xl rounded-tl-sm bg-black/5 px-4 py-2 text-sm dark:bg-white/10" aria-live="polite">
         {line}

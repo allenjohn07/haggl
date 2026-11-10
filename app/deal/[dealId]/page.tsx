@@ -76,9 +76,9 @@ async function DealView({ params, searchParams }: PageProps<"/deal/[dealId]">) {
         <p className="text-sm opacity-70">{shareText}</p>
         <ShareButton text={shareText} url={appUrl("/")} />
         <div className="flex flex-col gap-3">
-          <Speaker name="Bao" line={pickLine(LINES.bao.cheer)} />
-          <Speaker name="Mr. Pickle" line={pickLine(LINES.pickle.sulk)} />
-          <Speaker name="Beanie" line={pickLine(LINES.beanie.cheer)} />
+          <Speaker name="Bao" state="cheer" line={pickLine(LINES.bao.cheer)} />
+          <Speaker name="Mr. Pickle" state="sulk" line={pickLine(LINES.pickle.sulk)} />
+          <Speaker name="Beanie" state="cheer" line={pickLine(LINES.beanie.cheer)} />
         </div>
       </>
     );
@@ -96,9 +96,9 @@ async function DealView({ params, searchParams }: PageProps<"/deal/[dealId]">) {
       {failed ? (
         <Speaker name="Beanie" line={pickLine(LINES.errors.failed)} />
       ) : cancelled ? (
-        <Speaker name="Mr. Pickle" line={pickLine(LINES.pickle.sulk)} />
+        <Speaker name="Mr. Pickle" state="sulk" line={pickLine(LINES.pickle.sulk)} />
       ) : (
-        <Speaker name="Mr. Pickle" line={pickLine(LINES.pickle.pay)} />
+        <Speaker name="Mr. Pickle" state="pay" line={pickLine(LINES.pickle.pay)} />
       )}
       <p className="text-sm opacity-70">Same price as agreed. Mr. Pickle shook on it.</p>
       <RetryButton dealId={deal.dealId} />
