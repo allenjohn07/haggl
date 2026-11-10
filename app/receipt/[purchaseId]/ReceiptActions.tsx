@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Pixel } from "@/components/pixel/Pixel";
-import { Speech } from "@/components/pixel/Speech";
+import { Said } from "@/components/pixel/Speech";
+import { Button } from "@/components/ui/button";
 import { LINES, pickLine } from "@/data/lines";
+import { PayPalButton } from "@/app/(app)/_components/PayPalButton";
 
 // Re-creates the PayPal order for this purchase and goes back to PayPal. The price comes from the server.
-export function RetryPay({ purchaseId, label }: { purchaseId: string; label: string }) {
+export function RetryPay({ purchaseId }: { purchaseId: string }) {
   const [state, setState] = useState<"idle" | "paying" | "failed">("idle");
   const [line, setLine] = useState("");
 
@@ -36,22 +37,15 @@ export function RetryPay({ purchaseId, label }: { purchaseId: string; label: str
   }
 
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex flex-col gap-3">
       {state !== "idle" && (
-        <div className="flex items-end gap-2">
-          <Pixel who="spark" state={state === "paying" ? "pay" : "sulk"} scale={2} />
-          <div className="mb-4">
-            <Speech who="spark" tail="left" size="sm" live>
-              {line}
-            </Speech>
-          </div>
+        <div className="flex min-h-11 items-center">
+          <Said who="spark" state={state === "paying" ? "pay" : "sulk"} scale={1} live>
+            {line}
+          </Said>
         </div>
       )}
-      {state !== "paying" && (
-        <button type="button" onClick={pay} className="min-h-13 w-full rounded-full bg-paypal px-6 font-semibold text-ink active:scale-[0.98]">
-          {state === "failed" ? "Try again" : label}
-        </button>
-      )}
+      {state !== "paying" && <PayPalButton label="Pay with" onClick={pay}>{state === "failed" ? "Try again" : undefined}</PayPalButton>}
     </div>
   );
 }
@@ -73,11 +67,11 @@ export function ShareLine({ text }: { text: string }) {
     }
   }
   return (
-    <div className="flex flex-col items-center gap-2">
-      <p className="font-hand text-lg text-muted">&ldquo;{text}&rdquo;</p>
-      <button type="button" onClick={share} className="min-h-11 rounded-full border border-line px-5 text-sm font-medium text-text hover:border-muted">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-4 py-2.5">
+      <p className="min-w-0 text-[13px] text-text-2">{text}</p>
+      <Button variant="outline" onClick={share} className="h-11 shrink-0 sm:h-8">
         {copied ? "Copied" : "Share"}
-      </button>
+      </Button>
     </div>
   );
 }
