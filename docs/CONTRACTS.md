@@ -2,148 +2,108 @@
 
 Everyone builds against this file. Adding to it is always fine. If you rename or remove something, update this file and every caller in the same PR.
 
+## The flow in one paragraph
+
+The user searches for something they're thinking of buying (Channel3), picks a product and an offer (a fixed price at one store), and then watches their two advisors, **Spark** (treat yourself) and **Penny** (frugal skeptic), message each other about whether it's worth it. Penny pulls the same item's prices at other stores and cheaper alternatives (Channel3). Twice during the debate an advisor stops and asks the user a tap-to-answer question; the debate waits for the answer and uses it. The advisors end with a joint **verdict** (buy, buy elsewhere, wait, skip). The user makes the final call: **Buy** pays the fixed price through PayPal (the advisor calls the `create_paypal_order` tool), **Skip** ends with the advisors reacting. Nobody negotiates a price; prices come from the stores.
+
 ## Types (`lib/types.ts`)
 
-    export type Side = "buyer" | "seller";
+`Advisor`, `Offer`, `Product`, `ProductCard`, `Ask`, `Evidence`, `Stage`, `VerdictCall`, `Verdict`, `Purchase`. See the file; it is the source of truth for field names. Prices are USD dollars with cents (`129.99`).
 
-    // One turn by an agent. The server validates it before it is shown or stored.
-    export type Move = {
-      say: string;                         // in-character line, max ~200 chars
-      action: "offer" | "accept" | "walk";
-      price?: number;                      // whole dollars; required for "offer", ignored otherwise
-    };
+## Shared server stores
 
-    export type Product = {
-      id: string;                          // slug, e.g. "haunted-camera"
-      name: string;
-      blurb: string;                       // one funny line
-      emoji: string;                       // shown on the card
-      listPrice: number;                   // whole dollars
-      sellerFloor: number;                 // PRIVATE: seller never accepts below this
-      buyerMax: number;                    // PRIVATE: buyer never accepts above this
-    };
+- `lib/products.ts`: in-memory product cache. `rememberProducts(list)`, `getProduct(id)`, `getOffer(productId, offerId)`, `bestOffer(p)`, `toCard(p)`. **Every product the user can pick and every alternative an advisor shows must be remembered here first.** Purchase prices are read from here only.
+- `lib/purchases.ts`: in-memory purchases. `createPurchase(debateId, productId, offerId, pickedPrice)` copies the price from the stored offer; `getPurchase`, `updatePurchase`.
+- `lib/channel3/index.ts` (`search` lane): `searchProducts(query): Promise<Product[]>` and `findAlternatives(product, limit?): Promise<Product[]>` (similar products, cheaper first). Both call `rememberProducts`. `SEARCH_MODE=mock` (default) serves fixtures from `data/fixtures/`, so everything works offline.
+- `lib/paypal/orders.ts` (`paypal`): `createOrderForPurchase(purchaseId) => { orderId, approveUrl }`, `captureOrder(orderId)`, `capturePurchase(purchaseId, orderId)`.
 
-    export type Nudge = "nicer" | "bluff" | "walk_away";
+Single Render instance, so in-memory is fine. No database.
 
-    export type Stage =
-      | "search"        // looking up / preparing the item (Beanie)
-      | "buyer_think"   // buyer agent is generating a turn (Bao)
-      | "seller_think"  // seller agent is generating a turn (Mr. Pickle)
-      | "checkout"      // seller agent's tool call is creating the PayPal order (Beanie)
-      | "capture";      // capturing the approved PayPal order (Beanie)
+## Debate rules (enforced in `lib/debate`, not just in prompts)
 
-    export type Deal = {
-      dealId: string;                      // unguessable (crypto.randomUUID)
-      productId: string;
-      price: number;                       // agreed price, decided by the server
-      listPrice: number;
-      status: "agreed" | "order_created" | "captured" | "failed";
-      paypalOrderId?: string;
-      createdAt: number;
-    };
-
-## Deal store (`lib/deals.ts`, shared)
-
-In memory, on `globalThis`, single instance. `createDeal(productId, price, listPrice)` (status `agreed`, `dealId` from `crypto.randomUUID()`), `getDeal(dealId)`, `updateDeal(dealId, patch)`. `engine` creates deals; `paypal` reads and updates them. Prices passed to `createDeal` come only from the server's negotiation history.
-
-**Privacy rule:** `sellerFloor` and `buyerMax` never leave the server. They are not in any SSE event, API response, client bundle or log line. The client gets only `id`, `name`, `blurb`, `emoji` and `listPrice`.
-
-## Negotiation rules (enforced in `lib/negotiate`, not just in prompts)
-
-- Max **8 rounds**. A round is one buyer move plus one seller move.
-- The buyer opens. Offers are whole dollars between 1 and `listPrice`.
-- The buyer may never accept or offer above `buyerMax`. The seller may never accept below `sellerFloor`.
-- If a move breaks a rule: reject it, re-prompt that agent once with the rule stated, and if it still breaks it, clamp the price into the legal range and say so in-character.
-- A buyer `accept` is only valid if it accepts the seller's latest offer. A seller `accept` is only valid if it accepts the buyer's latest offer.
-- **Deal price = the accepted offer,** computed by the server from the stored history. Never taken from the client or from free text.
-- `walk` ends the negotiation with a `nodeal`.
-- After round 8 with no deal: the dramatic fallback. The server proposes the midpoint of the last two offers; if it is within both limits, both agents accept in character and a deal is made. Otherwise `nodeal` with a funny reason.
-- Each AI turn has a **12 second timeout**, one retry, then an in-character **scripted fallback move** that stays inside the legal range. The stream never shows a raw error to a judge.
-- `nudge` is injected as a private instruction to the buyer's next turn only ("be nicer", "bluff", "walk away"). `walk_away` makes the buyer walk immediately (with a line); it is a legitimate way to end the demo early.
-
-## Seller tool (the agentic commerce moment)
-
-When the seller accepts, the **seller agent closes the deal by calling a tool:**
-
-    create_paypal_order({ dealId: string })
-
-- The tool takes **only** the `dealId`. The price comes from the server's stored `Deal`, never from the model.
-- The implementation is `createOrderForDeal(dealId)` in `lib/paypal/orders.ts`. It creates a PayPal Orders v2 order (intent `CAPTURE`, currency USD) for `deal.price` and returns `{ orderId, approveUrl }`.
-- If time allows, use PayPal's Agent Toolkit for this call. Otherwise wrap the REST call. Verify request shapes against the current PayPal docs.
-- The tool call is visible in the stream (`stage: "checkout"`, then `order`).
+- **Turns alternate,** Spark first: Spark pitches, Penny answers. **Max 8 advisor messages** (4 each), then the verdict.
+- **Penny's first turn always runs the price check** (`check_prices` tool: the picked product's offers across stores) and the result is streamed as an `evidence` card. Either advisor may call `find_alternatives` once per debate (Channel3 similar products); Spark may call `look_closer` (ratings, key features). Tool calls are real and stream `stage: lookup` with an honest label ("Pulling prices from 5 stores").
+- **Two asks, guaranteed** (max 3). The engine asks Penny for a question after message 2 (budget or need) and Spark after message 5 (how often, or can it wait). An `Ask` has 2 to 4 short options. The stream emits `ask`, then `stage: waiting_user`, and **waits** for `POST /api/debate/answer`. Keep-alive comments every 15 s. If no answer comes in 90 s, the debate continues with "no answer" and the advisors say so in character. Answers are given to both advisors for the rest of the debate.
+- **Reactions:** every message after the first carries a short `reaction` (max ~60 chars) to the other advisor's last message ("Bold claim. Checking."). The UI shows it on the pixel character as the message lands.
+- **No invented prices:** a dollar amount in an advisor's text must match a price in the evidence, the picked offer, or a user answer (within $1). Otherwise reject, re-prompt once, then drop that sentence.
+- **Text limits:** message `text` max 280 chars, PG, in voice. `Ask.question` max ~90 chars, options max ~28 chars.
+- **Verdict:** one final AI call writes the joint `Verdict`. The server validates it: `productId`/`offerId` must exist in `lib/products.ts` (the picked product or an alternative that was shown), and **`price` and `savings` are always recomputed from the stored offers**. If invalid, a rule-based verdict is used (cheapest offer of the picked product; `buy_elsewhere` if it's cheaper than the pick, else `buy` if it fits the user's budget answer, else `wait`).
+- **Each AI turn: 12 s timeout, one retry, then a scripted in-character move.** After a turn fails twice, the rest of that debate is scripted, so an outage costs one slow turn. The stream never shows a raw error.
+- **Protect the key:** cap `max_tokens`, rate-limit per IP, never log prompts.
 
 ## API routes
 
-### `GET /api/products`
-Returns `Product[]` with private fields removed: `{ id, name, blurb, emoji, listPrice }[]`.
+### `POST /api/search`
+Request `{ query: string }` (1 to 80 chars). Response `{ products: ProductCard[] }` (max 8, products with at least one offer). 400 for a bad body. Rate limit 20 per 10 minutes per IP → 429 `{ error }`.
 
-### `POST /api/negotiate`
-Request: `{ productId: string, nudge?: Nudge }`
-Response: `text/event-stream` (SSE). Each event is `event: <name>` + `data: <json>`. Events:
+### `POST /api/debate`
+Request `{ productId: string, offerId: string }` (the user's pick; must exist in the store). Response `text/event-stream`. Each event is `event: <name>` + `data: <json>`. 404 for an unknown product or offer. Rate limit 6 debates per 10 minutes per IP → 429 `{ error }`.
 
 | Event | Data | When |
 |---|---|---|
-| `stage` | `{ stage: Stage, label: string }` | Before each unit of work; drives the characters |
-| `message` | `{ side: Side, say: string, action: Move["action"], price?: number, round: number }` | After each validated move |
-| `deal` | `{ dealId: string, productId: string, price: number, listPrice: number }` | Both sides agreed |
-| `order` | `{ dealId: string, approveUrl: string }` | The seller's tool call created the PayPal order |
-| `order_failed` | `{ dealId: string, message: string }` | The deal stands but creating the PayPal order failed. The deal is stored with `status: "failed"`; the UI routes to `/deal/<dealId>`, whose retry button calls `POST /api/checkout` |
-| `nodeal` | `{ reason: string }` | Walk-away or a failed fallback |
-| `error` | `{ message: string }` | Only for unrecoverable problems; the UI shows an in-character screen |
+| `start` | `{ debateId, product: ProductCard, picked: Offer }` | First event |
+| `stage` | `{ stage: Stage, advisor?: Advisor, label: string }` | Before each unit of real work. Drives the pixel characters |
+| `message` | `{ id, from: Advisor, text, reaction?, turn }` | After each validated advisor message |
+| `evidence` | `Evidence & { id }` | A tool call returned prices, alternatives or details |
+| `ask` | `Ask` | An advisor asks the user. Followed by `stage: waiting_user` |
+| `answer` | `{ askId, answer: string \| null }` | The server received an answer (or `null` after the 90 s timeout) |
+| `verdict` | `Verdict` | The joint verdict. The debate is over |
+| `error` | `{ message }` | Only for unrecoverable problems. The UI shows an in-character screen |
 | `done` | `{}` | Stream complete |
 
-Event order for a deal: `message` (the accept) → `deal` → `stage: checkout` → `order` **or** `order_failed` → `done`. If `done` arrives after a `deal` with no `order`, treat it like `order_failed`. On a `message` with `action: "accept"`, `price` is the accepted price. After round 8, the midpoint fallback appears as two `accept` messages (buyer then seller) with `round: 8`.
+### `POST /api/debate/answer`
+Request `{ debateId, askId, answer }`. `answer` must be one of the ask's options. 204 on success. 404 unknown debate or ask, 409 already answered, 400 not an option.
 
-400 `{ error }` for a bad body or unknown `productId`.
-
-Rate limit: 10 negotiations per 10 minutes per IP (first entry of `x-forwarded-for`), in memory. Over the limit returns HTTP 429 with `{ error: "..." }`, shown in character ("Pickle is on his break.").
+### `POST /api/buy`
+The user's final call after the verdict. Request `{ debateId, productId, offerId }`: must be either the verdict's pick or the user's original pick (the UI offers both when they differ). The server creates the `Purchase` (price from the stored offer), then **Spark's agent closes the sale by calling the tool `create_paypal_order({ purchaseId })`**. The tool takes only the id; the handler runs `createOrderForPurchase`. If the AI call fails, the server runs the tool itself. Response `{ purchaseId, approveUrl }`, or 502 `{ purchaseId, error }` (the UI then sends the user to `/receipt/<purchaseId>`, which has a retry). 404 unknown debate, 400 an offer that isn't allowed.
 
 ### `POST /api/checkout`
-Request: `{ dealId: string }` → `{ approveUrl: string }`.
-Used to **re-create** the order if the first approval link expired or the user came back. Same price from the stored `Deal`. 404 for an unknown `dealId`.
+`{ purchaseId }` → `{ approveUrl }`. Re-creates the order from the stored Purchase (expired, cancelled, failed). 404 unknown, 409 already paid, 502 PayPal failed. Never accepts a price.
 
-### `GET /api/capture?token=<paypalOrderId>&dealId=<dealId>`
-PayPal's `return_url`. Captures the order (**idempotent**: a second call with the same order returns the same result, never a second capture), marks the deal `captured`, then redirects to `/deal/<dealId>`. On failure redirects to `/deal/<dealId>?status=failed`.
+### `GET /api/capture?purchaseId=<id>&token=<paypalOrderId>`
+PayPal's `return_url`. Captures **idempotently** (a reload never captures twice), marks the purchase `captured`, redirects (303) to `/receipt/<purchaseId>`; on failure to `/receipt/<purchaseId>?status=failed`. PayPal's `cancel_url` is `/receipt/<purchaseId>?status=cancelled`.
 
-PayPal's `cancel_url` is `/deal/<dealId>?status=cancelled` (the deal stays `order_created`; the page shows the retry button). `POST /api/checkout` returns 409 for a deal that is already `captured`, and 502 `{ error }` (an in-character line) if PayPal fails. A failed `createOrderForDeal` marks the deal `failed` and throws.
+### `/receipt/[purchaseId]` (page)
+Reads the stored Purchase (dynamic, never cached). States: **paid** (captured), **retry** (created / order_created / failed / cancelled → a button that POSTs `/api/checkout` and redirects to PayPal), **not found**. All in character. A share line ("Penny and Spark said yes. Paid $79.99, saved $20.") and "Check something else" back to `/`.
 
-### `GET /deal/[dealId]` (page)
-Reads the stored `Deal`. Shows SOLD (captured), a retry button (order_created or failed), or a friendly "deal not found" in character. Includes the share card ("Got it for 38% off") computed from `listPrice` and `price`.
+### Skip
+Client only. After the verdict, **Skip** shows the advisors reacting (Penny cheers, Spark sulks) and how much was not spent, with "Check something else". No server call.
 
 ## Character states (`components/pixel`)
 
-`idle | think | search | talk | pay | cheer | sulk`
+`idle | think | lookup | talk | ask | pay | cheer | sulk`
 
-Stage to state mapping (the UI owns this mapping; it only reads `stage` events):
+Driven only by real events (the line pools in `data/lines.ts` decide what is said, never when):
 
-| Stage / event | Bao (buyer) | Mr. Pickle (seller) | Beanie (clerk) |
-|---|---|---|---|
-| (no work) | idle | idle | idle |
-| `search` | idle | idle | **search** |
-| `buyer_think` | **think** | idle | idle |
-| `message` from buyer | **talk** | idle | idle |
-| `seller_think` | idle | **think** | idle |
-| `message` from seller | idle | **talk** | idle |
-| `checkout` | idle | **pay** (stamps the deal) | **pay** |
-| `capture` | idle | idle | **pay** |
-| `deal` | **cheer** | **sulk** | idle |
-| captured SOLD page | **cheer** | **sulk** | **cheer** |
-| `nodeal` | **sulk** | **cheer** | idle |
-
-Speech bubbles read from `data/lines.ts`, keyed by `character` and `state` (see `docs/CHARACTERS.md`). A bubble appears the moment its state starts; negotiation `say` text appears in the chat log and as a short bubble on the speaker.
+| Event | Spark | Penny |
+|---|---|---|
+| picking a product | idle | idle |
+| `stage: search` | lookup | idle |
+| `stage: think` (advisor X) | X: **think**, pops into the chat in place of a typing indicator | other: idle |
+| `stage: lookup` (advisor X) | X: **lookup**, says the server's label | other: idle |
+| `message` from X | X: **talk**, shows `reaction`, then the message bubble lands | other: idle |
+| `ask` from X | X: **ask** | other: idle |
+| `stage: verdict` | think | think |
+| `verdict` buy | cheer | cheer |
+| `verdict` buy_elsewhere | cheer | cheer |
+| `verdict` wait | sulk | cheer |
+| `verdict` skip | sulk | cheer |
+| buy in flight (`checkout`) | **pay** | idle |
+| receipt paid | cheer | cheer |
+| user taps Skip | sulk | cheer |
 
 ## Environment variables (`.env.example`)
 
     ANTHROPIC_API_KEY=            # server only
     AI_MODE=mock                  # mock | live
     AI_MODEL=claude-haiku-5-5     # or claude-sonnet-5-5
+    CHANNEL3_API_KEY=             # server only
+    SEARCH_MODE=mock              # mock (fixtures) | live (Channel3)
     PAYPAL_CLIENT_ID=             # sandbox app
     PAYPAL_CLIENT_SECRET=         # sandbox app, server only
     PAYPAL_BASE=https://api-m.sandbox.paypal.com
     APP_URL=http://localhost:3000 # used for PayPal return/cancel URLs
 
-Optional, only if Channel3 is used: `CHANNEL3_API_KEY`.
-
 ## Design tokens
 
-One shared file (`styles/tokens.css` or Tailwind theme): pixel palette (warm market stall, day and dusk variants), outline colour `#2a2033`, UI chip style (frosted light and dark), font pair (a rounded UI font plus a mono for prices). The `ui` lane owns it; everyone else imports from it.
+One shared file, `styles/tokens.css`, owned by the `ui` lane. Dark, minimal and calm: a near-black background, soft surfaces, one accent colour per advisor (Spark warm, Penny cool), a clean sans for chat and buttons, a **handwritten font for the pixel characters' lines and the verdict card**, and a mono for prices. Everyone imports from it.

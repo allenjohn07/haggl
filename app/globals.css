@@ -1,23 +1,7 @@
 @import "tailwindcss";
-@import "../styles/tokens.css";
 
-html {
-  background: var(--page);
-}
-
+/* Placeholder dark base. The `ui` lane owns design tokens (styles/tokens.css) and replaces this. */
 body {
-  background: var(--page);
-  color: var(--ink);
-  font-family: var(--font-ui);
-}
-
-@keyframes bubble-pop {
-  from { transform: translateY(3px) scale(0.94); opacity: 0.6; }
-  to { transform: none; opacity: 1; }
-}
-.bubble-pop { animation: bubble-pop 0.18s cubic-bezier(0.2, 0.8, 0.3, 1.3); }
-
-@media (prefers-reduced-motion: reduce) {
-  .bubble-pop { animation: none; }
-  * { scroll-behavior: auto !important; transition: none !important; }
+  background: #0f0f12;
+  color: #ececf1;
 }

@@ -1,147 +1,59 @@
-# CHARACTERS: the pixel cast
+# CHARACTERS: the pixel advisors
 
-The signature feature: **wherever a normal app shows "Thinking...", a pixel character shows up and says something instead.** Characters are original. Do not use any existing franchise character.
+The signature feature: **wherever a chat app would show a typing indicator or a spinner, the pixel character who is working pops into the chat and says something instead.** Characters are original. Do not use any existing franchise character, and do not reuse anything from earlier prototypes.
 
-## Technique
+## Art direction
 
-- Draw into a low-res `<canvas>` and scale it by an **integer** with `image-rendering: pixelated`.
-- Rasterize each sprite from simple shape functions into a 32x32 grid, then shade it (lit top-left, shaded bottom-right), outline it with one dark colour, and add a face and props.
-- A per-state animation table: `{ frames, fps }`, with frames cached per character, state and frame.
-- Speech bubbles and name tags are **HTML overlays** over the canvas, so text stays crisp and accessible.
-- A small palette with day and dusk variants. Respect `prefers-reduced-motion` (hold frame 0, keep the speech).
-- The scene is a tiny market stall: awning, counter, hanging lanterns, cobblestones, the item on the counter. Mobile portrait layout first.
+- **Dark and calm.** The characters live on a near-black interface, so they are lit from within: bright, saturated bodies with a soft glow, no heavy black outlines.
+- **Hand-drawn pixel maps,** not procedural shapes: each frame is a small string grid (about 24x24) mapping characters to palette colours, drawn to a small canvas and scaled by an **integer** with `image-rendering: pixelated`. Frames cached per character, state and frame.
+- **They move into the chat.** A character slides up into the conversation where a typing indicator would be, does its thing, and slides out when the message lands. On the side-by-side layout it appears on the sender's own screen and peeks into the other's.
+- **Speech is HTML,** in the handwritten font, so it stays crisp and accessible (a live region carries the latest line).
+- **Reduced motion:** no sliding or bouncing; characters still appear, change state and speak.
 
 ## Cast
 
-### Bao: the buyer (the user's agent)
-A steamed-bun blob with a tiny bow tie and a coin purse. Polite on the surface, passive-aggressive underneath. Voice: overly courteous, quietly savage. Colour: warm cream and soft pink.
+### Spark: the "treat yourself" advisor
+A tiny firework with stubby legs: a stubby rocket body in coral and hot pink with gold bands, a fizzing fuse on top that throws pixel sparks when excited. Optimistic, impulsive, generous with exclamation marks, loves features and "joy per dollar". Never pushy about money the user doesn't have. Accent: warm (coral / gold).
 
-### Mr. Pickle: the seller
-A grumpy pickle shopkeeper with a mustache, an apron and a small abacus. Takes everything personally. Loves his "haunted" stock. Voice: sulky, dramatic, old-world. Colour: pickle green with a brown apron.
-
-### Beanie: the clerk
-A coffee bean with round glasses and a clipboard. Neutral narrator for work that isn't an agent's turn (searching, creating the PayPal order, capturing the payment). Voice: dry, efficient, slightly smug. Colour: espresso brown.
+### Penny: the frugal skeptic
+A small, round owl in sage and teal with big round reading glasses, holding a long receipt that unrolls when she checks prices. Dry, careful, deadpan; loves a bargain and a good question ("Do you need it, or want it?"). She does the price checks. Accent: cool (teal / mint).
 
 ## States
 
-| State | Frames / fps | Looks like |
-|---|---|---|
-| `idle` | 4 / 3 | Breathing squash and stretch, occasional blink |
-| `think` | 3 / 4 | Eyes up, tiny sweat or "..." bubble, a paw to the chin |
-| `search` | 4 / 5 | Flipping through papers or peering through a magnifier |
-| `talk` | 3 / 6 | Mouth open and shut, little hop on strong offers |
-| `pay` | 4 / 5 | Stamping the receipt, coin or card flourish |
-| `cheer` | 4 / 8 | Jump with both arms up, sparkles |
-| `sulk` | 2 / 2 | Slumped, one eye closed, small rain cloud |
+| State | Frames / fps | Spark | Penny |
+|---|---|---|---|
+| `idle` | 4 / 3 | bobs, fuse flickers | blinks, receipt sways |
+| `think` | 3 / 4 | taps chin, fuse sputters, "..." sparks | eyes up, adjusts glasses |
+| `lookup` | 4 / 6 | zips around with a tiny magnifier | receipt unrolls, scanning |
+| `talk` | 3 / 6 | bounces, mouth open and shut | nods, wing gestures |
+| `ask` | 2 / 3 | leans toward the user, "?" spark | raises a wing, "?" above |
+| `pay` | 4 / 6 | stamps a card, coin flourish | — |
+| `cheer` | 4 / 8 | fireworks burst | hoots, receipt flies up |
+| `sulk` | 2 / 2 | fuse droops, one sad spark | ruffled, glasses slide down |
 
 ## Speech lines (`data/lines.ts`)
 
-Static pools, chosen at random with no immediate repeat. They appear **instantly** and cost no AI call. Keep every line PG, short (under ~60 characters ideally, max ~80) and in the character's voice. The seed below is a starting point; write at least 6 per entry.
+Static pools keyed by advisor and state, chosen at random with no immediate repeat. They appear instantly and cost no AI call. PG, short (under ~50 characters ideally), in voice. At least 6 per entry. The `think` lines are often addressed to the other advisor ("Shh. Let me think." / "Hold that thought, Penny."). Seed:
 
-    export const LINES = {
-      bao: {
-        think: [
-          "Shh. Math in progress.",
-          "Let me think. Do not interrupt a bun.",
-          "Calculating how rude I can be.",
-          "One moment. Plotting.",
-        ],
-        talk: [
-          "Hear me out.",
-          "Respectfully, no.",
-          "I'm being very reasonable here.",
-          "Bold of you to say that price out loud.",
-        ],
-        cheer: [
-          "A bargain! I'm radiant.",
-          "Savings, baby.",
-          "That's what I call a bun-win situation.",
-          "Frame this receipt.",
-        ],
-        sulk: [
-          "I have been wronged.",
-          "Fine. I'll just own less stuff.",
-          "This is not over.",
-          "Betrayed by a pickle.",
-        ],
-        idle: [
-          "Pick something shiny.",
-          "I'm ready to be annoying.",
-          "I haggle. It's a lifestyle.",
-        ],
-      },
-      pickle: {
-        think: [
-          "Hold on, consulting my feelings about money.",
-          "Silence. The pickle is thinking.",
-          "This stock took me years to curate.",
-          "Do not rush a brined mind.",
-        ],
-        talk: [
-          "Absolutely not.",
-          "You insult my cucumbers.",
-          "That price is a crime.",
-          "I have a family. Of jars.",
-        ],
-        cheer: [
-          "Pleasure doing business!",
-          "Ha! You got lucky.",
-          "Another one for the books.",
-          "A brined win.",
-        ],
-        sulk: [
-          "You've robbed me, bun.",
-          "I'm closing early today.",
-          "My ancestors weep.",
-          "Take it. TAKE IT.",
-        ],
-        pay: [
-          "Stamping this before you change your mind.",
-          "Sealed with a vinegar kiss.",
-          "Fill in the paperwork, sucker. Er, friend.",
-        ],
-        idle: [
-          "Browse. Don't touch.",
-          "Everything's haunted. Terms apply.",
-          "Looking, or buying?",
-        ],
-      },
-      beanie: {
-        search: [
-          "Digging through the stock room. Hold on.",
-          "Checking the shelves so you don't have to.",
-          "Fetching. Don't rush me.",
-          "Filing a very small search party.",
-        ],
-        pay: [
-          "Writing up the invoice. Neatly.",
-          "Handing this to PayPal. Fingers crossed.",
-          "Stamping, signing, praying.",
-          "Money is about to move. Brace.",
-        ],
-        cheer: [
-          "Paperwork complete. Beautiful.",
-          "Payment received. Nobody panic.",
-          "Another satisfied customer. Allegedly.",
-        ],
-        idle: [
-          "Waiting on humans. As usual.",
-          "Clipboard at the ready.",
-        ],
-      },
-      errors: {
-        slow: ["Pickle stepped out. Back in a sec.", "Bao is stuck in a very long thought."],
-        failed: ["That didn't go through. Try again?", "The shop's having a moment. One more try?"],
-        busy: ["Pickle is on his break. Come back soon."],
-      },
-    } as const;
+    spark.think:  "Shh, let me cook.", "Hold that thought, Penny!", "Ooh, wait, wait, I have a point."
+    spark.lookup: "Checking the reviews. They love it.", "Digging up the good stuff."
+    spark.ask:    "Quick one for you!", "Help me win this one."
+    spark.cheer:  "Treat secured!", "You deserve nice things."
+    spark.sulk:   "Fine. Responsible. Boo.", "My fuse is out."
+    spark.pay:    "Writing up the order!", "Handing it to PayPal. Eek."
+    penny.think:  "Quiet, please. Thinking.", "Let me pull this up first.", "Mm. Not so fast, Spark."
+    penny.lookup: (use the server's label) "Pulling prices from other stores."
+    penny.ask:    "One question before I decide.", "Be honest with me."
+    penny.cheer:  "Money stays in your pocket.", "A sensible purchase. Rare."
+    penny.sulk:   "I'll allow it. Reluctantly.", "Noted. Filed. Disapproved."
+    errors:       slow, failed, busy pools (e.g. "PayPal's being slow. Hold tight.", "That didn't go through. Try again?", "Too many shoppers. Back in a minute.")
 
 ## Honest progress
 
-Bubbles and states follow **real server stages** (see the mapping in `docs/CONTRACTS.md`). The line pool only decides what the character says, never when. A character in `think` means an AI turn is really in flight.
+States follow **real server events** (mapping in `docs/CONTRACTS.md`). A character in `think` means an AI turn is really in flight; `lookup` means a real tool call (Channel3) is running, and its line is the server's label.
 
 ## Accessibility
 
-- All speech is real text in the DOM (a live region for the latest line), not baked into the canvas.
-- Tap targets 44px or larger. Colour contrast of bubbles meets WCAG AA.
-- Reduced motion: no hopping or sparkles; states still change and the speech still appears.
+- All speech and messages are real text in the DOM, not baked into the canvas.
+- Tap targets 44px or larger. Text and bubbles meet WCAG AA on the dark background.
+- Reduced motion respected (see above).
