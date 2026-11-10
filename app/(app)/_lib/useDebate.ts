@@ -48,7 +48,7 @@ const BEAT = {
   evidence: 1600,
   verdictStage: 1800,
 };
-const readTime = (text: string) => Math.min(2800, 700 + text.length * 16);
+const readTime = (text: string) => Math.min(1800, 500 + text.length * 10);
 
 type Start = { debateId: string; product: ProductCard; picked: Offer };
 type StageEv = { stage: Stage; advisor?: Advisor; label: string };
