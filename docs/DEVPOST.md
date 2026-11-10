@@ -3,7 +3,7 @@
 Keep this in sync with `README.md`. Replace everything in [BRACKETS] before submitting. A submission with a bracket left in it is unfinished.
 
 ## Project name
-Haggle: the agents that haggle (and actually pay)
+Haggl: the agents that haggle (and actually pay)
 
 ## Tagline
 Watch two pixel-art AI agents negotiate a price, then close the deal with a real PayPal payment.
@@ -53,11 +53,11 @@ Open [DEMO URL] on a phone. No sign-in needed.
 | Time | What's on screen | Say |
 |---|---|---|
 | 0:00 to 0:10 | Phone, the market stall | "Negotiating is exhausting, so most of us just overpay. What if your agent did it for you?" |
-| 0:10 to 0:25 | Pick the item, tap a nudge | "Meet Haggle. Pick an item, nudge your buyer, and watch." |
+| 0:10 to 0:25 | Pick the item, tap a nudge | "Meet Haggl. Pick an item, nudge your buyer, and watch." |
 | 0:25 to 1:25 | The live negotiation, characters talking, meter converging | Let it play; one line of narration at most |
 | 1:25 to 1:50 | Deal, Pickle stamps it, Beanie "writing up the invoice" | "When they agree, the seller agent calls a tool that creates the PayPal order itself." |
 | 1:50 to 2:15 | PayPal sandbox approval, SOLD screen, share card | "I approve the payment. The server set the price, so no one can tamper with it." |
-| 2:15 to 2:30 | Quick architecture card | "Claude agents, streamed over SSE, PayPal Orders on Render. Haggle: agentic commerce you can watch." |
+| 2:15 to 2:30 | Quick architecture card | "Claude agents, streamed over SSE, PayPal Orders on Render. Haggl: agentic commerce you can watch." |
 
 Record on a real phone (screen recording). No copyrighted music. Upload early; processing takes time.
 

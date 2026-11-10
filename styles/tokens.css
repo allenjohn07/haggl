@@ -1,4 +1,4 @@
-/* Haggle design tokens. The one shared place for UI colours, chips and fonts.
+/* Haggl design tokens. The one shared place for UI colours, chips and fonts.
    Canvas pixel colours live in components/pixel/palette.ts (same outline, same day/dusk idea).
    Add `.dusk` to a wrapper to switch the UI to the dusk variant. */
 

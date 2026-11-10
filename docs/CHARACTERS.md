@@ -1,8 +1,8 @@
 # CHARACTERS: the pixel cast
 
-The signature feature: **wherever a normal app shows "Thinking...", a pixel character shows up and says something instead.** Characters are original. Do not copy the pets in `docs/reference/pixel-spike.html` and do not use any existing franchise character.
+The signature feature: **wherever a normal app shows "Thinking...", a pixel character shows up and says something instead.** Characters are original. Do not use any existing franchise character.
 
-## Technique (reuse from `docs/reference/pixel-spike.html`)
+## Technique
 
 - Draw into a low-res `<canvas>` and scale it by an **integer** with `image-rendering: pixelated`.
 - Rasterize each sprite from simple shape functions into a 32x32 grid, then shade it (lit top-left, shaded bottom-right), outline it with one dark colour, and add a face and props.

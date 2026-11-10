@@ -41,7 +41,7 @@ export function Game({ products }: { products: PublicProduct[] }) {
   return (
     <main className="mx-auto flex w-full max-w-[480px] flex-1 flex-col">
       <header className="flex items-baseline justify-between gap-3 px-4 pt-3 pb-2">
-        <h1 className="text-2xl font-black tracking-tight">Haggle</h1>
+        <h1 className="text-2xl font-black tracking-tight">Haggl</h1>
         <p className="text-right text-[12px] font-bold text-ink-soft">Two AI agents haggle. You pay with PayPal.</p>
       </header>
 

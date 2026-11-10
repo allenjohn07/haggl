@@ -1,4 +1,4 @@
-# Haggle
+# Haggl
 
 Two AI agents haggle over a price in front of you as pixel-art characters, then close the deal with a real PayPal sandbox payment at the price they agreed on.
 

@@ -1,6 +1,6 @@
-# Haggle: PayPal AI Hackathon
+# Haggl: PayPal AI Hackathon
 
-Haggle is a mobile-first web app where two AI agents (a buyer and a grumpy shopkeeper) negotiate a price live as pixel-art characters. When they agree, the seller agent closes the deal by calling a tool that creates a PayPal sandbox order at the negotiated price. The user approves in PayPal and gets a SOLD screen. One human (the owner) drives several parallel Claude sessions, so the rules below keep them from colliding.
+Haggl is a mobile-first web app where two AI agents (a buyer and a grumpy shopkeeper) negotiate a price live as pixel-art characters. When they agree, the seller agent closes the deal by calling a tool that creates a PayPal sandbox order at the negotiated price. The user approves in PayPal and gets a SOLD screen. One human (the owner) drives several parallel Claude sessions, so the rules below keep them from colliding.
 
 Read these first, in this order:
 
@@ -10,8 +10,6 @@ Read these first, in this order:
 - `docs/CHARACTERS.md`: the pixel cast, their states and the speech-line pools
 - `docs/PLAN.md`: timeline, lanes, what to cut if we fall behind
 - `docs/DEVPOST.md`: the public story and the submission text. Update it when the product changes.
-- `docs/reference/pixel-spike.html`: a working prototype of the pixel-art technique to reuse (do not copy its characters)
-- `docs/reference/amble-CLAUDE.md`: an older project's rules file, for style only
 - `_kickoff/` (local only, gitignored): the original kickoff pack, frozen for reference. Never edit it; the live docs are the ones above.
 
 ## The organizers' rules bind every change

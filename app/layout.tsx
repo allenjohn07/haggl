@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Haggle",
+  title: "Haggl",
   description: "Watch two pixel-art AI agents haggle, then pay with PayPal.",
 };
 

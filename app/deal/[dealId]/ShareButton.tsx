@@ -12,7 +12,7 @@ export function ShareButton({ text, url }: { text: string; url: string }) {
 
   async function share() {
     if (navigator.share) {
-      await navigator.share({ title: "Haggle", text, url }).catch(() => {});
+      await navigator.share({ title: "Haggl", text, url }).catch(() => {});
       return;
     }
     try {

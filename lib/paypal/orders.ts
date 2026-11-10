@@ -40,20 +40,20 @@ async function createOrder(dealId: string): Promise<{ orderId: string; approveUr
   try {
     const order = await paypalFetch<Order>("/v2/checkout/orders", {
       method: "POST",
-      requestId: `haggle-create-${dealId}-${crypto.randomUUID()}`,
+      requestId: `haggl-create-${dealId}-${crypto.randomUUID()}`,
       body: {
         intent: "CAPTURE",
         purchase_units: [
           {
             custom_id: dealId,
-            description: `Haggle: ${product?.name ?? "a very haggled item"}`.slice(0, 127),
+            description: `Haggl: ${product?.name ?? "a very haggled item"}`.slice(0, 127),
             amount: { currency_code: "USD", value: deal.price.toFixed(2) },
           },
         ],
         payment_source: {
           paypal: {
             experience_context: {
-              brand_name: "Haggle",
+              brand_name: "Haggl",
               user_action: "PAY_NOW",
               shipping_preference: "NO_SHIPPING",
               // PayPal appends ?token=<orderId>&PayerID=... to the return URL.
@@ -97,7 +97,7 @@ async function doCapture(orderId: string): Promise<{ ok: boolean; captureId?: st
   try {
     const order = await paypalFetch<Order>(`${path}/capture`, {
       method: "POST",
-      requestId: `haggle-capture-${orderId}`,
+      requestId: `haggl-capture-${orderId}`,
       body: {},
     });
     if (order.status === "COMPLETED") return { ok: true, captureId: captureIdOf(order) };

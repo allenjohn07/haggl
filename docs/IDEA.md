@@ -1,4 +1,4 @@
-# IDEA: Haggle
+# IDEA: Haggl
 
 ## One line
 
@@ -6,7 +6,7 @@ Two AI agents haggle over a price in front of you as pixel-art characters, then 
 
 ## The problem
 
-Negotiating is exhausting and awkward, so most people don't do it and overpay. Agentic commerce (software that shops and pays on your behalf) is coming, but it is hard to picture and harder to trust. Haggle makes it visible, funny and safe: you watch the agent work, you can nudge it, and you approve the payment yourself.
+Negotiating is exhausting and awkward, so most people don't do it and overpay. Agentic commerce (software that shops and pays on your behalf) is coming, but it is hard to picture and harder to trust. Haggl makes it visible, funny and safe: you watch the agent work, you can nudge it, and you approve the payment yourself.
 
 ## What the user does
 
