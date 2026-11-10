@@ -89,7 +89,7 @@ body {
 }
 @keyframes peek {
   from { transform: translate(-100%, 30%); }
-  to { transform: translate(-38%, 18%); }
+  to { transform: translate(-22%, 12%); }
 }
 @keyframes sheet-up {
   from { transform: translateY(40px); opacity: 0; }
@@ -117,7 +117,7 @@ body {
   }
   .anim-peek {
     animation: none;
-    transform: translate(-38%, 18%);
+    transform: translate(-22%, 12%);
   }
   html {
     scroll-behavior: auto;

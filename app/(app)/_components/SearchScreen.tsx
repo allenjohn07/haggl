@@ -183,15 +183,13 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
           ))}
         </div>
 
-        <div className="mt-5 flex min-h-12 items-center justify-center">
-          {say && (
-            <div key={say.text} className="anim-pop-in">
-              <Speech who={say.who} tail="down" live>
-                {say.text}
-              </Speech>
-            </div>
-          )}
-        </div>
+        {say && (
+          <div key={say.text} className="anim-pop-in mt-5 flex justify-center">
+            <Speech who={say.who} tail="down" live>
+              {say.text}
+            </Speech>
+          </div>
+        )}
         {(status === "failed" || status === "busy") && (
           <button type="button" onClick={() => search(lastQuery)} className="mt-2 min-h-11 rounded-full border border-line px-5 text-sm font-medium text-text">
             Try again
