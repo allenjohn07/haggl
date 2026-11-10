@@ -4,10 +4,10 @@ The signature feature: **wherever a chat app would show a typing indicator or a 
 
 ## Art direction
 
-- **Dark and calm.** The characters live on a near-black interface, so they are lit from within: bright, saturated bodies with a soft glow, no heavy black outlines.
+- **Dark and calm.** The characters live on a near-black interface, so they are lit from within: bright, saturated bodies with a faint glow (kept subtle so it sits in the calm, Linear-style UI), no heavy black outlines.
 - **Hand-drawn pixel maps,** not procedural shapes: each frame is a small string grid (about 24x24) mapping characters to palette colours, drawn to a small canvas and scaled by an **integer** with `image-rendering: pixelated`. Frames cached per character, state and frame.
 - **They move into the chat.** A character slides up into the conversation where a typing indicator would be, does its thing, and slides out when the message lands. On the side-by-side layout it appears on the sender's own screen and peeks into the other's.
-- **Speech is HTML,** in the handwritten font, so it stays crisp and accessible (a live region carries the latest line).
+- **Speech is HTML** in the UI font (Inter), not handwriting: a small muted chip next to the sprite with the advisor's name in their accent colour. It stays crisp and accessible (a live region carries the latest line).
 - **Reduced motion:** no sliding or bouncing; characters still appear, change state and speak.
 
 ## Cast

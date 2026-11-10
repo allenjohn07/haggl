@@ -127,7 +127,7 @@ export function DebateScreen({
 
   const status =
     state.status === "verdict" && state.verdict ? (
-      <Status on>{callLabel(state.verdict)}</Status>
+      <Status on={state.verdict.call === "buy" || state.verdict.call === "buy_elsewhere"}>{callLabel(state.verdict)}</Status>
     ) : state.status === "live" ? (
       <Status on>Live</Status>
     ) : state.status === "connecting" ? (

@@ -6,4 +6,4 @@ Keeps the pixel sprites (components/pixel/sprites.ts) and the product flow and s
 Files: components/ui/*, lib/utils.ts, components.json, app/(app)/_components/*, app/receipt/*, components/pixel/Pixel.tsx and Speech.tsx,
 styles/tokens.css, app/globals.css, app/layout.tsx, docs/CHARACTERS.md, docs/CONTRACTS.md (design tokens), CLAUDE.md (one line on fonts).
 
-Status: in progress.
+Status: built and screenshotted; docs updated; final verification.
