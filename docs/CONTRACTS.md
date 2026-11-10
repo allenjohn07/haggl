@@ -100,6 +100,8 @@ Used to **re-create** the order if the first approval link expired or the user c
 ### `GET /api/capture?token=<paypalOrderId>&dealId=<dealId>`
 PayPal's `return_url`. Captures the order (**idempotent**: a second call with the same order returns the same result, never a second capture), marks the deal `captured`, then redirects to `/deal/<dealId>`. On failure redirects to `/deal/<dealId>?status=failed`.
 
+PayPal's `cancel_url` is `/deal/<dealId>?status=cancelled` (the deal stays `order_created`; the page shows the retry button). `POST /api/checkout` returns 409 for a deal that is already `captured`, and 502 `{ error }` (an in-character line) if PayPal fails. A failed `createOrderForDeal` marks the deal `failed` and throws.
+
 ### `GET /deal/[dealId]` (page)
 Reads the stored `Deal`. Shows SOLD (captured), a retry button (order_created or failed), or a friendly "deal not found" in character. Includes the share card ("Got it for 38% off") computed from `listPrice` and `price`.
 
