@@ -33,13 +33,7 @@ function ProductBar({ product, picked }: { product: ProductCard; picked: Offer }
   );
 }
 
-// Messages on the board so far, counted per advisor for the pane headers.
-function count(state: DebateState, who: Advisor) {
-  return state.items.filter((it) => it.kind === "message" && it.from === who).length;
-}
-
 function PaneHeader({ who, state }: { who: Advisor; state: DebateState }) {
-  const n = count(state, who);
   return (
     <div className="flex h-12 shrink-0 items-center gap-2.5 border-b border-border px-4">
       <Pixel who={who} state={state.moods[who]} scale={1} />
@@ -47,9 +41,6 @@ function PaneHeader({ who, state }: { who: Advisor; state: DebateState }) {
         <span className="font-medium text-foreground">{NAME[who]}</span>
         <span className="text-muted-foreground"> · {ROLE[who]}</span>
       </p>
-      <span className="text-[12px] text-muted-foreground tabular-nums">
-        {n} {n === 1 ? "message" : "messages"}
-      </span>
     </div>
   );
 }
