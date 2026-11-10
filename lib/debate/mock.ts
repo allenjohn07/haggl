@@ -1,7 +1,7 @@
 import { bestOffer } from "@/lib/products";
 import type { Advisor } from "@/lib/types";
 import type { Say } from "./agents";
-import { budgetOf, leansWait, type Answer, type State } from "./rules";
+import { budgetOf, type Answer, type State } from "./rules";
 import type { LookupTool } from "./tools";
 
 // Scripted moves: all of mock mode, and the in-character fallback when a live AI turn fails.
@@ -54,12 +54,12 @@ function answerLine(advisor: Advisor, a: Answer, s: State): string {
   }
   const budget = budgetOf(s);
   const best = bestOffer(s.product);
-  if (budget !== undefined) {
+  if (budget !== undefined && /budget|spend/i.test(a.question)) {
     const fits = best.price <= budget;
     if (advisor === "spark") return fits ? `${$(best.price)} fits inside "${a.answer}"! The universe has spoken!` : `"${a.answer}". Okay. I hear it. I hate it, but I hear it.`;
     return fits ? `"${a.answer}" covers ${$(best.price)}. Annoyingly, it fits.` : `"${a.answer}" doesn't cover ${$(best.price)}. That's a problem.`;
   }
-  if (leansWait(s)) {
+  if (/rarely|can wait/i.test(a.answer)) {
     return advisor === "spark" ? `"${a.answer}"? Oof. Okay, that one hurts my case.` : `"${a.answer}". So it can sit in a cart for a while.`;
   }
   return advisor === "spark" ? `"${a.answer}"! See, Penny? This is a real use, not a whim.` : `"${a.answer}". Fine. That counts for something.`;
