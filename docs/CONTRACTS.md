@@ -42,6 +42,10 @@ Everyone builds against this file. Adding to it is always fine. If you rename or
       createdAt: number;
     };
 
+## Deal store (`lib/deals.ts`, shared)
+
+In memory, on `globalThis`, single instance. `createDeal(productId, price, listPrice)` (status `agreed`, `dealId` from `crypto.randomUUID()`), `getDeal(dealId)`, `updateDeal(dealId, patch)`. `engine` creates deals; `paypal` reads and updates them. Prices passed to `createDeal` come only from the server's negotiation history.
+
 **Privacy rule:** `sellerFloor` and `buyerMax` never leave the server. They are not in any SSE event, API response, client bundle or log line. The client gets only `id`, `name`, `blurb`, `emoji` and `listPrice`.
 
 ## Negotiation rules (enforced in `lib/negotiate`, not just in prompts)
