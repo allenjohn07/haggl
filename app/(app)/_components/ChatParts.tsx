@@ -73,6 +73,13 @@ export function YouLine({ text }: { text: string }) {
 
 const KIND: Record<Evidence["kind"], string> = { prices: "Price check", alternatives: "Alternatives", details: "A closer look" };
 
+function subtitle(e: Evidence) {
+  const n = e.items.length;
+  if (e.kind === "prices") return `${n} ${n === 1 ? "store" : "stores"}`;
+  if (e.kind === "alternatives") return `${n} similar ${n === 1 ? "pick" : "picks"}`;
+  return `${n} ${n === 1 ? "detail" : "details"}`;
+}
+
 // "your pick, out of stock, was $99.00" -> pieces for the table.
 function parseNote(note?: string) {
   const parts = (note ?? "").split(",").map((s) => s.trim()).filter(Boolean);
@@ -94,7 +101,7 @@ export function EvidenceCard({ evidence, side }: { evidence: Evidence; side: Sid
         <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
           <p className="truncate text-[12px]">
             <span className="font-medium text-foreground">{KIND[evidence.kind]}</span>
-            <span className="text-muted-foreground"> · {evidence.title}</span>
+            <span className="text-muted-foreground"> · {subtitle(evidence)}</span>
           </p>
           <Byline who={evidence.from} />
         </div>
@@ -103,7 +110,7 @@ export function EvidenceCard({ evidence, side }: { evidence: Evidence; side: Sid
             {evidence.items.map((item, i) => (
               <li key={i} className="flex items-baseline justify-between gap-3 px-3 py-2 text-[13px]">
                 <span className="text-text-2">{item.label}</span>
-                {item.note && <span className="num shrink-0 text-[12px] text-muted-foreground">{item.note}</span>}
+                {item.note && <span className="shrink-0 text-[12px] text-muted-foreground tabular-nums">{item.note}</span>}
               </li>
             ))}
           </ul>
@@ -216,13 +223,17 @@ export function PopSlot({ pop, sideOf, live }: { pop: Pop | null; sideOf: (a: Ad
   );
 }
 
-// On the other advisor's screen, the working character peeks up from the bottom edge.
-export function Peek({ pop }: { pop: Pop | null }) {
-  if (!pop) return null;
+// On the other advisor's screen: a quiet note that the working advisor is busy in their own chat.
+export function Elsewhere({ who, side }: { who: Advisor; side: Side }) {
   return (
-    <div key={pop.key} aria-hidden className="anim-peek pointer-events-none absolute bottom-0 left-4">
-      <Pixel who={pop.advisor} state={pop.state} scale={2} />
-    </div>
+    <Row side={side}>
+      <p className="anim-rise flex items-center gap-2 text-[12px] text-muted-foreground">
+        <Pixel who={who} state="idle" scale={1} />
+        <span>
+          <span className="font-medium text-foreground">{NAME[who]}</span> is replying in {who === "spark" ? "his" : "her"} chat
+        </span>
+      </p>
+    </Row>
   );
 }
 
