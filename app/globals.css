@@ -1,7 +1,125 @@
 @import "tailwindcss";
+@import "../styles/tokens.css";
 
-/* Placeholder dark base. The `ui` lane owns design tokens (styles/tokens.css) and replaces this. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-soft: var(--bg-soft);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-ink: var(--ink);
+  --color-spark: var(--spark);
+  --color-spark-2: var(--spark-2);
+  --color-spark-soft: var(--spark-soft);
+  --color-penny: var(--penny);
+  --color-penny-2: var(--penny-2);
+  --color-penny-soft: var(--penny-soft);
+  --color-you: var(--you);
+  --color-paypal: var(--paypal);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-hand: var(--font-kalam), "Comic Sans MS", cursive;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+}
+
+html {
+  background: var(--bg);
+  color-scheme: dark;
+}
+
 body {
-  background: #0f0f12;
-  color: #ececf1;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgb(255 122 92 / 0.06), transparent 60%),
+    radial-gradient(1200px 600px at 90% -10%, rgb(69 209 181 / 0.06), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgb(255 200 87 / 0.35);
+}
+
+:focus-visible {
+  outline: 2px solid var(--penny-2);
+  outline-offset: 2px;
+}
+
+/* Pixel sprites: integer-scaled canvas, lit from within with a soft glow. */
+.pixel {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+.glow-spark {
+  filter: drop-shadow(0 0 10px var(--spark-glow));
+}
+.glow-penny {
+  filter: drop-shadow(0 0 10px var(--penny-glow));
+}
+
+.raised {
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-raised);
+}
+
+.scroll-quiet {
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-3) transparent;
+}
+
+/* Motion. Everything below is switched off for reduced motion. */
+@keyframes pop-in {
+  from { transform: translateY(28px) scale(0.96); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes pop-out {
+  from { transform: none; opacity: 1; }
+  to { transform: translateY(20px) scale(0.96); opacity: 0; }
+}
+@keyframes land {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes peek {
+  from { transform: translate(-100%, 30%); }
+  to { transform: translate(-38%, 18%); }
+}
+@keyframes sheet-up {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.anim-pop-in { animation: pop-in 380ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.anim-pop-out { animation: pop-out 260ms ease-in both; }
+.anim-land { animation: land 320ms ease-out both; }
+.anim-peek { animation: peek 420ms ease-out both; }
+.anim-sheet { animation: sheet-up 420ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.anim-fade { animation: fade 300ms ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-pop-in,
+  .anim-pop-out,
+  .anim-land,
+  .anim-sheet,
+  .anim-fade {
+    animation: none;
+  }
+  .anim-peek {
+    animation: none;
+    transform: translate(-38%, 18%);
+  }
+  html {
+    scroll-behavior: auto;
+  }
 }
