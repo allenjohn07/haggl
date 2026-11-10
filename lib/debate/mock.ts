@@ -76,22 +76,27 @@ export function scriptedSay(advisor: Advisor, s: State, fresh?: Answer): Say {
   const alt = alts?.items[0];
   const reaction = n === 1 ? "" : scriptedReaction(advisor, s);
   const lead = fresh ? `${answerLine(advisor, fresh, s)} ` : "";
+  // A line not said yet in this debate, if there is one.
+  const pickNew = (xs: string[]) => {
+    const unsaid = xs.filter((x) => !s.messages.some((m) => m.text.includes(x)));
+    return pick(unsaid.length ? unsaid : xs);
+  };
 
   let text: string;
   if (advisor === "spark") {
     if (n === 1) {
-      text = pick([
+      text = pickNew([
         `Penny! ${short(p.title)}. ${rating}. ${feature}. I'm already in love.`,
         `Okay Penny, don't start. ${$(s.picked.price)} for ${feature.toLowerCase()}? That's joy per dollar right there.`,
         `Penny, look at this one. ${rating}! I think we've found a treat.`,
       ]);
     } else if (n >= 7) {
-      text = pick([
+      text = pickNew([
         "Final word: you deserve nice things, and this is a nice thing. Within reason, yes, Penny.",
         `Look, we checked the prices, we asked the questions. ${feature} is still great. I rest my case.`,
       ]);
     } else {
-      text = pick([
+      text = pickNew([
         `${feature}. Every single day. You can't put a price on that. Well, you can, it's ${$(best.price)}.`,
         `${rating}, Penny. That many people can't all be wrong.`,
         alt ? `Sure, ${short(alt.label)} is cheaper, but is it THIS one? No. It is not.` : "Cheaper exists, sure. Better? Not that I can see.",
@@ -107,12 +112,12 @@ export function scriptedSay(advisor: Advisor, s: State, fresh?: Answer): Say {
         ? `Also: ${short(alt.label)} is ${$(alt.price!)} at ${alt.note}. Similar job, less money.`
         : "I looked for something similar and cheaper. Nothing worth it. Credit where due.";
     } else if (n >= 8) {
-      text = pick([
+      text = pickNew([
         "Fine. My final position: only if it earns its keep. We've laid it out. Let's call it.",
         "Here's where I land: buy it smart or don't buy it. Verdict time.",
       ]);
     } else {
-      text = pick([
+      text = pickNew([
         "Do they need it, or want it? Those are different prices, emotionally.",
         "A cart full of treats is how a budget dies, Spark.",
         `${$(best.price)} is ${$(best.price)}. Joy doesn't show up on the statement.`,
