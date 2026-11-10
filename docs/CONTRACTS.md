@@ -87,11 +87,16 @@ Response: `text/event-stream` (SSE). Each event is `event: <name>` + `data: <jso
 | `message` | `{ side: Side, say: string, action: Move["action"], price?: number, round: number }` | After each validated move |
 | `deal` | `{ dealId: string, productId: string, price: number, listPrice: number }` | Both sides agreed |
 | `order` | `{ dealId: string, approveUrl: string }` | The seller's tool call created the PayPal order |
+| `order_failed` | `{ dealId: string, message: string }` | The deal stands but creating the PayPal order failed. The deal is stored with `status: "failed"`; the UI routes to `/deal/<dealId>`, whose retry button calls `POST /api/checkout` |
 | `nodeal` | `{ reason: string }` | Walk-away or a failed fallback |
 | `error` | `{ message: string }` | Only for unrecoverable problems; the UI shows an in-character screen |
 | `done` | `{}` | Stream complete |
 
-Rate limit: per IP (for example 10 negotiations per 10 minutes). Over the limit returns HTTP 429 with `{ error: "..." }`, shown in character ("Pickle is on his break.").
+Event order for a deal: `message` (the accept) → `deal` → `stage: checkout` → `order` **or** `order_failed` → `done`. If `done` arrives after a `deal` with no `order`, treat it like `order_failed`. On a `message` with `action: "accept"`, `price` is the accepted price. After round 8, the midpoint fallback appears as two `accept` messages (buyer then seller) with `round: 8`.
+
+400 `{ error }` for a bad body or unknown `productId`.
+
+Rate limit: 10 negotiations per 10 minutes per IP (first entry of `x-forwarded-for`), in memory. Over the limit returns HTTP 429 with `{ error: "..." }`, shown in character ("Pickle is on his break.").
 
 ### `POST /api/checkout`
 Request: `{ dealId: string }` → `{ approveUrl: string }`.
