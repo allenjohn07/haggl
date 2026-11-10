@@ -15,6 +15,7 @@ The user searches for something they're thinking of buying (Channel3), picks a p
 - `lib/products.ts`: in-memory product cache. `rememberProducts(list)`, `getProduct(id)`, `getOffer(productId, offerId)`, `bestOffer(p)`, `toCard(p)`. **Every product the user can pick and every alternative an advisor shows must be remembered here first.** Purchase prices are read from here only.
 - `lib/purchases.ts`: in-memory purchases. `createPurchase(debateId, productId, offerId, pickedPrice)` copies the price from the stored offer; `getPurchase`, `updatePurchase`.
 - `lib/channel3/index.ts` (`search` lane): `searchProducts(query): Promise<Product[]>` and `findAlternatives(product, limit?): Promise<Product[]>` (similar products, cheaper first). Both call `rememberProducts`. `SEARCH_MODE=mock` (default) serves fixtures from `data/fixtures/`, so everything works offline.
+- `lib/ratelimit.ts`: `clientIp(request)`, `rateLimit(name, ip, limit, windowMs) => boolean`. Use it for every rate-limited route.
 - `lib/paypal/orders.ts` (`paypal`): `createOrderForPurchase(purchaseId) => { orderId, approveUrl }`, `captureOrder(orderId)`, `capturePurchase(purchaseId, orderId)`.
 
 Single Render instance, so in-memory is fine. No database.
