@@ -93,7 +93,7 @@ export function AskCard({ ask, answer, side, onAnswer }: { ask: Ask; answer?: st
   const done = answer !== undefined;
   return (
     <Row side={side}>
-      <div className={`anim-land w-full max-w-[92%] rounded-3xl border ${accent} bg-surface p-4 sm:max-w-md`}>
+      <div data-ask className={`anim-land w-full max-w-[92%] rounded-3xl border ${accent} bg-surface p-4 sm:max-w-md`}>
         <p className={`text-xs font-semibold uppercase tracking-wider ${ask.from === "spark" ? "text-spark" : "text-penny"}`}>
           {NAME[ask.from]} asks you
         </p>
