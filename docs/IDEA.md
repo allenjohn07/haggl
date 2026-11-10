@@ -21,7 +21,7 @@ Shopping agents are coming, but "an AI that buys things for you" is hard to trus
 ## Why it wins
 
 - **Agentic commerce:** the agents research (Channel3), reason, and close the purchase with a tool call that creates the PayPal order, with the human approving.
-- **Most creative / design:** pixel characters replace every "typing..." and spinner; a calm dark interface with handwritten touches.
+- **Most creative / design:** pixel characters replace every "typing..." and spinner; a calm, Linear-style dark interface.
 - **Best demo delivery:** an argument you can follow in a minute, a real price comparison, a real payment.
 - **PayPal + AI:** without the AI there's no advice; without PayPal there's no purchase.
 - **Technological implementation:** server-side prices that the client can't touch, validated tool calls, no invented prices, interactive pauses in a live stream, idempotent capture, graceful fallbacks.

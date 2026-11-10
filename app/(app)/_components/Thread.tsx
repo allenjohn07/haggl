@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import type { Advisor, Ask } from "@/lib/types";
 import { useReducedMotion } from "@/components/pixel/useReducedMotion";
 import type { DebateState } from "../_lib/useDebate";
-import { AskCard, EvidenceCard, Huddle, MessageBubble, Peek, PopSlot, YouBubble, type Side } from "./ChatParts";
+import { AskCard, EvidenceCard, Huddle, MessageBubble, Peek, PopSlot, YouLine, type Side } from "./ChatParts";
 
 // One conversation. `owner` set = that advisor's own screen (own messages on the right).
 // `owner` null = the phone thread: Spark on the left, Penny on the right.
@@ -35,11 +35,13 @@ export function Thread({
 
   return (
     <div className="relative min-h-0 flex-1 overflow-hidden">
-      <div ref={ref} className="scroll-quiet h-full overflow-y-auto px-3 pb-6 pt-4 sm:px-5">
+      <div ref={ref} className={`scroll-quiet h-full overflow-y-auto px-4 pt-3 sm:px-5 ${owner || state.status === "verdict" ? "pb-20" : "pb-6"}`}>
         <div className="mx-auto flex max-w-3xl flex-col gap-3">
-          <p className="py-2 text-center text-xs text-faint">
+          <div className="flex items-center gap-3 py-1 text-[11px] text-muted-foreground">
+            <span className="h-px flex-1 bg-border-soft" />
             {state.status === "connecting" ? "Sending your pick to Spark and Penny" : "Today"}
-          </p>
+            <span className="h-px flex-1 bg-border-soft" />
+          </div>
           {state.items.map((it, i) => {
             if (it.kind === "message") {
               const prev = state.items[i - 1];
@@ -49,7 +51,7 @@ export function Thread({
             if (it.kind === "evidence") return <EvidenceCard key={it.id} evidence={it.evidence} side={side(it.evidence.from)} />;
             if (it.kind === "ask")
               return <AskCard key={it.id} ask={it.ask} answer={it.answer} side={side(it.ask.from)} onAnswer={(a) => onAnswer(it.ask, a)} />;
-            return <YouBubble key={it.id} text={it.text} />;
+            return <YouLine key={it.id} text={it.text} />;
           })}
           <PopSlot pop={popHere} sideOf={side} live />
           {state.huddle && <Huddle line={state.huddle} live={live} />}

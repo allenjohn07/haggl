@@ -1,42 +1,59 @@
-/* Haggl design tokens. Owned by the `ui` lane; every screen uses these.
-   Dark, calm, minimal. One accent per advisor: Spark warm, Penny cool.
-   Contrast: text and muted pass WCAG AA on bg, surface and surface-2. */
+/* Haggl design tokens. Owned by the `ui` lane; the single source for every screen.
+   Linear-style: near-black, surfaces barely lifted, hairline borders, small radii, mostly greys.
+   One brand accent (indigo) for primary actions and focus. Spark and Penny colours are small identity marks only.
+   The shadcn/ui variables (background, foreground, primary, ...) are set here too; app/globals.css maps them to Tailwind. */
 
 :root {
   /* Surfaces */
-  --bg: #09090c;
-  --bg-soft: #0e0e13;
-  --surface: #14141b;
-  --surface-2: #1c1c25;
-  --surface-3: #262631;
-  --line: #2b2b37;
-  --line-soft: #1f1f29;
+  --background: #08090a;
+  --surface: #0f1011;        /* panes, cards, inputs */
+  --surface-2: #141516;      /* raised: sheets, popovers, hovered rows */
+  --surface-3: #1b1c1e;      /* pressed, selected */
+
+  /* Hairlines */
+  --border: rgb(255 255 255 / 0.08);
+  --border-soft: rgb(255 255 255 / 0.05);
+  --input: rgb(255 255 255 / 0.1);
 
   /* Text */
-  --text: #eeedf3;
-  --muted: #a9a8b8;   /* 8.0:1 on bg, 7.0:1 on surface-2 */
-  --faint: #8d8c9e;   /* 5.6:1 on bg, 4.9:1 on surface-2 */
-  --ink: #121016;     /* dark text on light or accent fills */
+  --foreground: #f7f8f8;
+  --text-2: #d0d6e0;         /* body copy in messages */
+  --muted-foreground: #8a8f98; /* secondary text, 6.4:1 on background */
+  --faint: #6b6f76;          /* hints and kbd only, 3.9:1: never for essential text */
 
-  /* Spark: warm */
-  --spark: #ff7a5c;
-  --spark-2: #ffc857;
-  --spark-soft: #2a1714;
-  --spark-glow: rgb(255 112 84 / 0.45);
+  /* Brand accent: desaturated indigo */
+  --primary: #5e6ad2;
+  --primary-hover: #6e79d6;
+  --primary-foreground: #ffffff;
+  --ring: #5e6ad2;
 
-  /* Penny: cool */
-  --penny: #45d1b5;
-  --penny-2: #a6f2da;
-  --penny-soft: #0f2522;
-  --penny-glow: rgb(69 209 181 / 0.4);
+  /* Advisor identity marks (dots, names, thin borders), never big fills */
+  --spark: #f2785c;
+  --penny: #4cc3a8;
 
-  /* You (the user) */
-  --you: #e9e7f5;
+  /* Status */
+  --positive: #4cb782;       /* savings, "Live" */
+  --destructive: #eb5757;
 
   /* PayPal button */
   --paypal: #ffc439;
+  --paypal-hover: #f2ba36;
+  --paypal-blue: #003087;
+  --paypal-sky: #009cde;
 
-  --radius: 18px;
-  --radius-lg: 28px;
-  --shadow-raised: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 12px 32px -12px rgb(0 0 0 / 0.6);
+  /* shadcn/ui roles */
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface-2);
+  --popover-foreground: var(--foreground);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--surface-2);
+  --accent: rgb(255 255 255 / 0.05); /* hover tint */
+  --accent-foreground: var(--foreground);
+
+  /* Shape and motion */
+  --radius: 0.5rem;          /* 8px cards; buttons and inputs use radius-md (~6px) */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 180ms;
 }

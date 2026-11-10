@@ -19,7 +19,7 @@ The first version (two agents bargaining over a price) was replaced on Tue Nov 1
 
 - `engine`: the debate loop (Spark and Penny, tools, asks and waiting for answers, reactions, no invented prices, verdict), SSE, `/api/debate`, `/api/debate/answer`, `/api/buy` with the `create_paypal_order` tool, mock mode, fallbacks, rate limits, `scripts/debate.ts`.
 - `search`: Channel3 client (`/v1/search`), mapping to `Product`, `findAlternatives`, fixtures for mock mode, `/api/search`.
-- `ui`: dark theme and tokens, fonts (handwritten accent), the pixel advisors, search and picker, the debate screens (two side by side on wide screens, one thread on phones), ask chips, evidence cards, verdict card, buy and skip, the receipt page.
+- `ui`: dark theme and tokens, fonts (Inter and Geist Mono, shadcn/ui), the pixel advisors, search and picker, the debate screens (two side by side on wide screens, one thread on phones), ask chips, evidence cards, verdict card, buy and skip, the receipt page.
 - `paypal`: done (orders, capture, checkout). Only fixes.
 - `ship`: README, Devpost, deploy config, smoke checks.
 

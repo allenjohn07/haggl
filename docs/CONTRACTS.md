@@ -107,4 +107,11 @@ Driven only by real events (the line pools in `data/lines.ts` decide what is sai
 
 ## Design tokens
 
-One shared file, `styles/tokens.css`, owned by the `ui` lane. Dark, minimal and calm: a near-black background, soft surfaces, one accent colour per advisor (Spark warm, Penny cool), a clean sans for chat and buttons, a **handwritten font for the pixel characters' lines and the verdict card**, and a mono for prices. Everyone imports from it.
+One shared file, `styles/tokens.css`, owned by the `ui` lane; `app/globals.css` maps it to Tailwind names. Everyone uses it.
+
+- **Look:** Linear-style. Near-black background `#08090a`, surfaces barely lifted (`#0f1011`, `#141516`), hairline borders (white at 5 to 10% alpha), small radii (6 to 8px), mostly greys. Secondary text `#8a8f98`.
+- **One brand accent:** indigo `#5e6ad2` for primary actions, selection and focus rings. Green `#4cb782` only for status ("Live", savings).
+- **Advisor accents are small identity marks:** Spark coral `#f2785c`, Penny teal `#4cc3a8`, used as a dot, a name, or a thin left border on their own messages. Never big filled bubbles.
+- **Type:** Inter (variable, with the optical-size axis) for everything, 13 to 14px body at -0.01em, headings semibold at -0.02em and modest sizes. Geist Mono, small and tabular (`.num`), for prices. No other fonts.
+- **Components:** shadcn/ui (`components/ui/*`, Radix base, `cn` from `lib/utils.ts`): button, input, badge, separator, sheet (the verdict: right panel on desktop, bottom sheet on phones), kbd.
+- **Motion:** 150 to 200ms ease-out, opacity and translate only; off for `prefers-reduced-motion`. No gradients as decoration, glassmorphism, big shadows or glow buttons. The PayPal button keeps PayPal's yellow with the wordmark set in text.

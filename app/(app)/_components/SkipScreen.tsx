@@ -3,37 +3,42 @@
 import { useState } from "react";
 import { Pixel } from "@/components/pixel/Pixel";
 import { Speech } from "@/components/pixel/Speech";
+import { Button } from "@/components/ui/button";
 import { LINES, pickLine } from "@/data/lines";
 import { money } from "../_lib/format";
+import { TopBar } from "./TopBar";
 
 // User tapped Skip: Penny cheers, Spark sulks, and the money that stayed put.
 export function SkipScreen({ kept, onAgain }: { kept: number; onAgain: () => void }) {
   const [lines] = useState(() => ({ spark: pickLine(LINES.spark.sulk), penny: pickLine(LINES.penny.cheer) }));
   return (
-    <main className="anim-fade flex flex-1 flex-col items-center justify-center gap-8 px-6 py-12 text-center">
-      <div className="flex items-end gap-6 sm:gap-16">
-        <div className="flex flex-col items-center gap-3">
-          <Speech who="spark" tail="down" size="sm">
-            {lines.spark}
-          </Speech>
-          <Pixel who="spark" state="sulk" scale={4} />
+    <>
+      <TopBar crumbs={["Skipped"]} />
+      <main className="anim-fade flex flex-1 items-start justify-center px-4 pt-[12vh]">
+        <div className="flex w-full max-w-md flex-col gap-5">
+          <div className="flex items-end gap-2">
+            <Pixel who="spark" state="sulk" scale={3} />
+            <Pixel who="penny" state="cheer" scale={3} />
+          </div>
+          <div>
+            <h1 className="text-[22px] leading-tight font-semibold tracking-[-0.022em] text-foreground">
+              Kept <span className="text-positive tabular-nums">{money(kept)}</span> in your pocket
+            </h1>
+            <p className="mt-1.5 text-[14px] text-muted-foreground">Nothing bought, nothing charged.</p>
+          </div>
+          <div className="flex flex-col items-start gap-2">
+            <Speech who="penny" live>
+              {lines.penny}
+            </Speech>
+            <Speech who="spark">{lines.spark}</Speech>
+          </div>
+          <div>
+            <Button onClick={onAgain} className="h-11 px-4 sm:h-9">
+              Check something else
+            </Button>
+          </div>
         </div>
-        <div className="flex flex-col items-center gap-3">
-          <Speech who="penny" tail="down" size="sm" live>
-            {lines.penny}
-          </Speech>
-          <Pixel who="penny" state="cheer" scale={4} />
-        </div>
-      </div>
-      <div>
-        <h1 className="font-hand text-4xl font-bold leading-tight text-text sm:text-5xl">
-          Kept <span className="font-mono text-penny-2">{money(kept)}</span> in your pocket
-        </h1>
-        <p className="mt-3 text-muted">Nothing bought, nothing charged.</p>
-      </div>
-      <button type="button" onClick={onAgain} className="min-h-12 rounded-full bg-text px-7 font-semibold text-ink">
-        Check something else
-      </button>
-    </main>
+      </main>
+    </>
   );
 }

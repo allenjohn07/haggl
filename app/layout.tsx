@@ -1,11 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Kalam } from "next/font/google";
+import { Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 
-// Inter for chat and buttons, Kalam (handwritten) for the advisors' lines and the verdict, JetBrains Mono for prices.
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const kalam = Kalam({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-kalam" });
-const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
+// Inter (variable, with the optical-size axis so headings get the Display cut) for everything; Geist Mono for prices.
+const inter = Inter({ subsets: ["latin"], axes: ["opsz"], variable: "--font-inter" });
+const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export const metadata: Metadata = {
   title: "Haggl",
@@ -15,13 +14,13 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#09090c",
+  themeColor: "#08090a",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} ${kalam.variable} ${mono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className={`dark ${inter.variable} ${mono.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }

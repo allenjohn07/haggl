@@ -88,7 +88,7 @@ Stay inside your lane's files. If you must touch another lane, keep it tiny and 
 | `engine` | `lib/debate/*`, `app/api/debate/*`, `app/api/buy/*`, `scripts/debate.ts` |
 | `search` | `lib/channel3/*`, `app/api/search/*`, `data/fixtures/*` |
 | `paypal` | `lib/paypal/*`, `app/api/checkout/*`, `app/api/capture/*` |
-| `ui` | `components/pixel/*`, `app/(app)/*`, `app/receipt/*`, `data/lines.ts`, `styles/tokens.css`, global styles and fonts |
+| `ui` | `components/pixel/*`, `app/(app)/*`, `app/receipt/*`, `data/lines.ts`, `styles/tokens.css`, `components/ui/*`, `lib/utils.ts`, global styles and fonts |
 | `ship` | `README.md`, `docs/DEVPOST.md`, deployment config, smoke script |
 
 ## Working alongside everyone
@@ -116,6 +116,6 @@ Stay inside your lane's files. If you must touch another lane, keep it tiny and 
 - Check for an existing helper or component before writing one.
 - Use the shared design tokens and components, or several sessions will produce several looks.
 - Keep code plain and short; the owner has to be able to explain all of it.
-- Keep the look consistent: the shared tokens, the two advisor accents, the handwritten font only for character lines and the verdict, integer-scaled pixel sprites, HTML for all text. Shared stores (`lib/products.ts`, `lib/purchases.ts`, `lib/types.ts`) change only by small, stated additions.
+- Keep the look consistent: the shared tokens and shadcn/ui components (`components/ui/*`), the indigo accent for actions, the two advisor colours only as small identity marks, Inter plus Geist Mono for prices (no other fonts), integer-scaled pixel sprites, HTML for all text. Shared stores (`lib/products.ts`, `lib/purchases.ts`, `lib/types.ts`) change only by small, stated additions.
 
 Before you call something done, run it and see it work, and say plainly what you did and didn't check.

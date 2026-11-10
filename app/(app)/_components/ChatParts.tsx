@@ -1,162 +1,226 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CheckIcon } from "lucide-react";
 import type { Advisor, Ask, Evidence } from "@/lib/types";
 import { Pixel } from "@/components/pixel/Pixel";
-import { Speech } from "@/components/pixel/Speech";
+import { Said, Speech } from "@/components/pixel/Speech";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { Pop } from "../_lib/useDebate";
-import { money } from "../_lib/format";
+import { money, store } from "../_lib/format";
 
 export type Side = "left" | "right";
 export const NAME: Record<Advisor, string> = { spark: "Spark", penny: "Penny" };
+export const ROLE: Record<Advisor, string> = { spark: "Treat yourself", penny: "Frugal skeptic" };
 
 function Row({ side, children }: { side: Side; children: React.ReactNode }) {
   return <div className={`flex w-full ${side === "right" ? "justify-end" : "justify-start"}`}>{children}</div>;
 }
 
-// An advisor's message. `own` = on its owner's screen (accent fill), otherwise a quiet bubble.
+export function Dot({ who }: { who: Advisor }) {
+  return <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${who === "spark" ? "bg-spark" : "bg-penny"}`} />;
+}
+
+// Small header for a card: the advisor's dot and name, then what it is.
+function Byline({ who, children }: { who: Advisor; children?: React.ReactNode }) {
+  return (
+    <p className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+      <Dot who={who} />
+      <span className="font-medium text-foreground">{NAME[who]}</span>
+      {children}
+    </p>
+  );
+}
+
+// An advisor's message. `own` = on its owner's screen: a thin accent border on the left marks it.
 export function MessageBubble({ from, text, side, own, showName }: { from: Advisor; text: string; side: Side; own: boolean; showName: boolean }) {
-  const fill = own
-    ? from === "spark"
-      ? "bg-spark text-ink"
-      : "bg-penny text-ink"
-    : "bg-surface-2 text-text";
-  const corner = side === "right" ? "rounded-br-md" : "rounded-bl-md";
+  const mark = own ? (from === "spark" ? "border-l-spark" : "border-l-penny") : "";
   return (
     <Row side={side}>
-      <div className={`anim-land flex max-w-[85%] flex-col sm:max-w-[78%] ${side === "right" ? "items-end" : "items-start"}`}>
+      <div className={`anim-rise flex max-w-[88%] flex-col gap-1 sm:max-w-[80%] ${side === "right" ? "items-end" : "items-start"}`}>
         {showName && (
-          <span className={`mb-1 px-1 text-xs font-medium ${from === "spark" ? "text-spark" : "text-penny"}`}>{NAME[from]}</span>
+          <span className="flex items-center gap-1.5 px-0.5 text-[12px] font-medium text-foreground">
+            <Dot who={from} />
+            {NAME[from]}
+          </span>
         )}
-        <p className={`rounded-3xl ${corner} px-4 py-2.5 text-[15px] leading-relaxed ${fill}`}>{text}</p>
+        <p
+          className={`rounded-md border border-border px-3 py-2 text-[14px] leading-[1.55] text-text-2 ${
+            own ? `border-l-2 ${mark} bg-surface-2` : "bg-surface"
+          }`}
+        >
+          {text}
+        </p>
       </div>
     </Row>
   );
 }
 
-export function YouBubble({ text }: { text: string }) {
+// The user's tap, as an activity line.
+export function YouLine({ text }: { text: string }) {
   return (
-    <div className="anim-land flex flex-col items-center gap-1">
-      <span className="text-xs font-medium text-muted">You</span>
-      <p className="rounded-3xl bg-you px-4 py-2 text-[15px] font-medium text-ink">{text}</p>
-    </div>
+    <p className="anim-rise flex items-center justify-center gap-2 py-1 text-[12px] text-muted-foreground">
+      <span aria-hidden className="flex size-4 items-center justify-center rounded-full bg-surface-3 text-[9px] font-semibold text-foreground">
+        Y
+      </span>
+      <span>
+        You answered <span className="font-medium text-foreground">{text}</span>
+      </span>
+    </p>
   );
 }
 
-// Prices, alternatives or details an advisor pulled with a tool.
+const KIND: Record<Evidence["kind"], string> = { prices: "Price check", alternatives: "Alternatives", details: "A closer look" };
+
+// "your pick, out of stock, was $99.00" -> pieces for the table.
+function parseNote(note?: string) {
+  const parts = (note ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  return {
+    pick: parts.includes("your pick"),
+    out: parts.includes("out of stock"),
+    rest: parts.filter((p) => p !== "your pick" && p !== "out of stock").join(", "),
+  };
+}
+
+// Prices, alternatives or details an advisor pulled with a tool: a compact table.
 export function EvidenceCard({ evidence, side }: { evidence: Evidence; side: Side }) {
   const priced = evidence.items.filter((i) => typeof i.price === "number");
-  const best = priced.length ? Math.min(...priced.map((i) => i.price as number)) : undefined;
-  const accent = evidence.from === "spark" ? "text-spark" : "text-penny";
-  const icon = evidence.kind === "prices" ? "Price check" : evidence.kind === "alternatives" ? "Alternatives" : "Details";
+  const best = priced.length > 1 ? Math.min(...priced.map((i) => i.price as number)) : undefined;
+  const head = "px-3 py-1.5 text-left text-[11px] font-normal text-muted-foreground";
   return (
     <Row side={side}>
-      <div className="anim-land w-full max-w-[88%] rounded-3xl border border-line bg-bg-soft p-4 sm:max-w-sm">
-        <p className={`text-xs font-semibold uppercase tracking-wider ${accent}`}>
-          {icon} · {NAME[evidence.from]}
-        </p>
-        <p className="mt-1 font-medium text-text">{evidence.title}</p>
-        <ul className="mt-3 divide-y divide-line-soft">
-          {evidence.items.map((item, i) => {
-            const isBest = best !== undefined && item.price === best;
-            return (
-              <li key={i} className="flex items-center justify-between gap-3 py-2">
-                <div className="min-w-0">
-                  <p className={`truncate text-sm ${isBest ? "text-text" : "text-muted"}`}>
-                    {evidence.kind === "details" && <span className={`mr-2 ${accent}`} aria-hidden>•</span>}
-                    {item.label}
-                  </p>
-                  {item.note && <p className="text-xs text-faint">{item.note}</p>}
-                </div>
-                {typeof item.price === "number" && (
-                  <span
-                    className={`shrink-0 rounded-full px-2.5 py-1 font-mono text-sm ${
-                      isBest ? "bg-penny-2 font-semibold text-ink" : "text-muted"
-                    }`}
-                  >
-                    {money(item.price)}
-                    {isBest && <span className="sr-only"> (best price)</span>}
-                  </span>
-                )}
+      <div className="anim-rise w-full max-w-[94%] overflow-hidden rounded-lg border border-border bg-surface sm:max-w-md">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
+          <p className="truncate text-[12px]">
+            <span className="font-medium text-foreground">{KIND[evidence.kind]}</span>
+            <span className="text-muted-foreground"> · {evidence.title}</span>
+          </p>
+          <Byline who={evidence.from} />
+        </div>
+        {evidence.kind === "details" ? (
+          <ul className="divide-y divide-border-soft">
+            {evidence.items.map((item, i) => (
+              <li key={i} className="flex items-baseline justify-between gap-3 px-3 py-2 text-[13px]">
+                <span className="text-text-2">{item.label}</span>
+                {item.note && <span className="num shrink-0 text-[12px] text-muted-foreground">{item.note}</span>}
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ul>
+        ) : (
+          <table className="w-full table-fixed text-[13px]">
+            <thead className="border-b border-border-soft">
+              <tr>
+                <th className={head}>{evidence.kind === "prices" ? "Store" : "Product"}</th>
+                <th className={`${head} w-[30%]`}>{evidence.kind === "prices" ? "Stock" : "Store"}</th>
+                <th className={`${head} w-[34%] text-right`}>Price</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-soft">
+              {evidence.items.map((item, i) => {
+                const isBest = best !== undefined && item.price === best;
+                const n = parseNote(item.note);
+                return (
+                  <tr key={i} className={isBest ? "bg-positive/[0.06]" : undefined}>
+                    <td className="px-3 py-2">
+                      <span className={`block truncate ${isBest ? "text-foreground" : "text-text-2"}`}>
+                        {evidence.kind === "prices" ? store(item.label) : item.label}
+                      </span>
+                      {evidence.kind === "prices" && (n.pick || n.rest) && (
+                        <span className="block truncate text-[11px] text-muted-foreground">
+                          {[n.pick ? "Your pick" : "", n.rest].filter(Boolean).join(" · ")}
+                        </span>
+                      )}
+                    </td>
+                    <td className="truncate px-3 py-2 text-[12px] text-muted-foreground">
+                      {evidence.kind === "prices" ? (n.out ? "Out of stock" : "In stock") : item.note ? store(item.note) : ""}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <span className="inline-flex items-center justify-end gap-1.5">
+                        {isBest && (
+                          <Badge variant="outline" className="h-4 rounded-sm border-positive/30 px-1 text-[10px] text-positive">
+                            Best
+                          </Badge>
+                        )}
+                        {typeof item.price === "number" && (
+                          <span className={`num ${isBest ? "text-foreground" : "text-text-2"}`}>{money(item.price)}</span>
+                        )}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
     </Row>
   );
 }
 
-// A tap-to-answer question. Answered (or timed out) chips lock in place.
+// A tap-to-answer question. Answered (or timed out) options lock in place.
 export function AskCard({ ask, answer, side, onAnswer }: { ask: Ask; answer?: string | null; side: Side; onAnswer: (a: string) => void }) {
-  const accent = ask.from === "spark" ? "border-spark/40" : "border-penny/40";
   const done = answer !== undefined;
   return (
     <Row side={side}>
-      <div data-ask className={`anim-land w-full max-w-[92%] rounded-3xl border ${accent} bg-surface p-4 sm:max-w-md`}>
-        <p className={`text-xs font-semibold uppercase tracking-wider ${ask.from === "spark" ? "text-spark" : "text-penny"}`}>
-          {NAME[ask.from]} asks you
-        </p>
-        <p className="mt-1 text-lg font-medium leading-snug text-text">{ask.question}</p>
+      <div data-ask className="anim-rise w-full max-w-[94%] rounded-lg border border-border bg-surface p-3 sm:max-w-md">
+        <Byline who={ask.from}>
+          <span>asks you</span>
+        </Byline>
+        <p className="mt-1.5 text-[14px] leading-snug font-medium text-foreground">{ask.question}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {ask.options.map((opt) => {
             const chosen = answer === opt;
             return (
-              <button
+              <Button
                 key={opt}
                 type="button"
+                variant="outline"
                 disabled={done}
                 onClick={() => onAnswer(opt)}
-                className={`min-h-11 rounded-full border px-4 text-[15px] font-medium transition-colors ${
-                  chosen
-                    ? "border-you bg-you text-ink"
-                    : done
-                      ? "border-line text-faint"
-                      : "border-line bg-surface-2 text-text hover:border-muted active:scale-[0.98]"
+                className={`h-11 px-3 text-[13px] font-normal sm:h-8 ${
+                  chosen ? "border-primary/60 bg-primary/15 text-foreground disabled:opacity-100" : "bg-transparent text-text-2"
                 }`}
               >
+                {chosen && <CheckIcon aria-hidden className="size-3.5" />}
                 {opt}
-              </button>
+              </Button>
             );
           })}
         </div>
-        {answer === null && <p className="mt-3 text-sm text-muted">No answer, so they carried on without it.</p>}
+        {answer === undefined && <p className="mt-2.5 text-[12px] text-muted-foreground">They&apos;ll carry on once you answer.</p>}
+        {answer === null && <p className="mt-2.5 text-[12px] text-muted-foreground">No answer, so they carried on without it.</p>}
       </div>
     </Row>
   );
 }
 
-// The character in place of a typing indicator: slides up with a handwritten line, slides out when the message lands.
+// The character in place of a typing indicator: rises in with its line, fades out when the message lands.
 export function PopSlot({ pop, sideOf, live }: { pop: Pop | null; sideOf: (a: Advisor) => Side; live: boolean }) {
   const [shown, setShown] = useState<Pop | null>(pop);
   if (pop && pop !== shown) setShown(pop);
   const leaving = !pop && shown !== null;
   useEffect(() => {
     if (!leaving) return;
-    const t = setTimeout(() => setShown(null), 260);
+    const t = setTimeout(() => setShown(null), 150);
     return () => clearTimeout(t);
   }, [leaving]);
   if (!shown) return null;
   const side = sideOf(shown.advisor);
   return (
-    <div key={shown.advisor} className={`${leaving ? "anim-pop-out" : "anim-pop-in"} flex w-full ${side === "right" ? "justify-end" : "justify-start"}`}>
-      <div className={`flex items-end gap-2 ${side === "right" ? "flex-row-reverse" : ""}`}>
-        <Pixel who={shown.advisor} state={shown.state} scale={3} flip={side === "right" && shown.advisor === "spark"} />
-        <div className="mb-8 max-w-[15rem] sm:max-w-xs">
-          <Speech who={shown.advisor} tail={side === "right" ? "right" : "left"} live={live}>
-            {shown.line}
-          </Speech>
-        </div>
-      </div>
+    <div key={shown.advisor} className={`${leaving ? "anim-sink" : "anim-rise"} flex w-full ${side === "right" ? "justify-end" : "justify-start"}`}>
+      <Said who={shown.advisor} state={shown.state} live={live} reverse={side === "right"} flip={side === "right" && shown.advisor === "spark"}>
+        {shown.line}
+      </Said>
     </div>
   );
 }
 
-// On the other advisor's screen, the working character peeks in from the edge.
+// On the other advisor's screen, the working character peeks up from the bottom edge.
 export function Peek({ pop }: { pop: Pop | null }) {
   if (!pop) return null;
   return (
-    <div key={pop.key} aria-hidden className="anim-peek pointer-events-none absolute bottom-0 left-0">
+    <div key={pop.key} aria-hidden className="anim-peek pointer-events-none absolute bottom-0 left-4">
       <Pixel who={pop.advisor} state={pop.state} scale={2} />
     </div>
   );
@@ -165,14 +229,14 @@ export function Peek({ pop }: { pop: Pop | null }) {
 // stage: verdict. Both advisors huddle.
 export function Huddle({ line, live }: { line: string; live: boolean }) {
   return (
-    <div className="anim-pop-in flex flex-col items-center gap-2 py-2">
+    <div className="anim-rise flex flex-col items-center gap-2 py-3">
       <div className="flex items-end gap-1">
-        <Pixel who="spark" state="think" scale={3} />
-        <Pixel who="penny" state="think" scale={3} />
+        <Pixel who="spark" state="think" scale={2} />
+        <Pixel who="penny" state="think" scale={2} />
       </div>
-      <p aria-live={live ? "polite" : undefined} className="font-hand text-xl text-text">
+      <Speech who="spark" named={false} live={live}>
         {line}
-      </p>
+      </Speech>
     </div>
   );
 }
