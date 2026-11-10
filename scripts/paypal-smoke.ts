@@ -1,20 +1,26 @@
 // PayPal sandbox smoke test.
 //   1) npx tsx --env-file=.env.local scripts/paypal-smoke.ts
-//      Creates a deal and a PayPal order, prints the approve URL. Open it, log in as the sandbox buyer, approve.
+//      Creates a purchase and a PayPal order, prints the approve URL. Open it, log in as the sandbox buyer, approve.
 //      (The return to localhost will fail if no dev server is running; that's fine, the order stays approved.)
 //   2) npx tsx --env-file=.env.local scripts/paypal-smoke.ts <orderId>
 //      Captures the approved order twice in a row and twice at once. All must report the same capture id.
-import { PRODUCTS } from "@/data/products";
-import { createDeal } from "@/lib/deals";
+import { rememberProducts } from "@/lib/products";
+import { createPurchase } from "@/lib/purchases";
 import { describeError } from "@/lib/paypal/client";
-import { captureOrder, createOrderForDeal } from "@/lib/paypal/orders";
+import { captureOrder, createOrderForPurchase } from "@/lib/paypal/orders";
 
 async function create() {
-  const product = PRODUCTS[0];
-  const price = Math.round((product.sellerFloor + product.buyerMax) / 2);
-  const deal = createDeal(product.id, price, product.listPrice);
-  console.log(`deal ${deal.dealId}: ${product.name} for $${price} (list $${product.listPrice})`);
-  const { orderId, approveUrl } = await createOrderForDeal(deal.dealId);
+  rememberProducts([
+    {
+      id: "smoke-headphones",
+      title: "Smoke Test Headphones",
+      keyFeatures: [],
+      offers: [{ offerId: "smoke-headphones:example.com", merchant: "example.com", price: 89.99, url: "https://example.com", inStock: true }],
+    },
+  ]);
+  const purchase = createPurchase("smoke", "smoke-headphones", "smoke-headphones:example.com", 89.99)!;
+  console.log(`purchase ${purchase.purchaseId}: ${purchase.title} for $${purchase.price.toFixed(2)}`);
+  const { orderId, approveUrl } = await createOrderForPurchase(purchase.purchaseId);
   console.log(`order   ${orderId}`);
   console.log(`approve ${approveUrl}`);
   console.log(`then:   npx tsx --env-file=.env.local scripts/paypal-smoke.ts ${orderId}`);

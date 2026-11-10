@@ -2,37 +2,38 @@
 
 ## One line
 
-Two AI agents haggle over a price in front of you as pixel-art characters, then close the deal with a real PayPal sandbox payment at the price they agreed on.
+Two pixel-art AI advisors argue about something you're about to buy, check what it costs elsewhere, ask you a couple of questions, and tell you whether it's worth it. If you say yes, one of them pays for it with PayPal.
 
 ## The problem
 
-Negotiating is exhausting and awkward, so most people don't do it and overpay. Agentic commerce (software that shops and pays on your behalf) is coming, but it is hard to picture and harder to trust. Haggl makes it visible, funny and safe: you watch the agent work, you can nudge it, and you approve the payment yourself.
+Shopping agents are coming, but "an AI that buys things for you" is hard to trust. Most of us also overspend on impulse, because nobody is there to ask "do you actually need this?" or "is it cheaper somewhere else?". Haggl makes the agent's reasoning visible and a little funny: two advisors with opposite instincts argue it out in front of you, show their evidence, include you in the decision, and only spend money when you say so.
 
 ## What the user does
 
-1. Opens the link on a phone and sees a little market stall with two characters.
-2. Picks an item (a "haunted" film camera, a sentient lamp, and so on).
-3. Optionally nudges their buyer agent: **Be nicer**, **Bluff**, **Walk away**.
-4. Watches Bao (the buyer) and Mr. Pickle (the shopkeeper) trade offers in a chat. A haggle meter shows the two prices converging.
-5. When they agree, Mr. Pickle stamps the deal and his agent creates the PayPal order itself.
-6. The user approves in PayPal (sandbox) and lands on a SOLD screen with a shareable receipt ("got it for 38% off").
+1. Opens the link and types what they're thinking of buying (or taps a suggestion).
+2. Picks a product and a store's price from real search results (Channel3). Prices are fixed by the stores.
+3. Watches **Spark** (treat yourself) and **Penny** (frugal skeptic) message each other. On a wide screen they're two chat screens side by side; on a phone, one thread.
+4. Instead of a typing indicator, the pixel character who's composing pops into the chat: "Shh, let me think", "Pulling prices from 5 stores", or a quick reaction to the other's point.
+5. Gets asked two quick questions mid-debate ("What's your budget?", "How often would you use it?") and taps an answer. The argument changes with it.
+6. Reads the verdict card: buy, buy it cheaper elsewhere, wait, or skip, with reasons and the best price found.
+7. Makes the final call. **Buy** → Spark's agent creates the PayPal order → approve in the PayPal sandbox → receipt. **Skip** → Penny celebrates the money saved.
 
 ## Why it wins
 
-- **Agentic Commerce:** the seller agent closes the sale by calling a tool that creates the PayPal order. The AI is not a chatbot bolted next to a checkout button; it is the thing that moves the money.
-- **Most Creative / Design:** pixel characters replace every spinner and "Thinking..." with a speaking character, so even waiting is entertainment.
-- **Best Demo Delivery:** the demo is 3 minutes of a funny negotiation, then a real payment. Easy to follow, easy to remember.
-- **PayPal + AI:** each is essential. Without PayPal there is no deal; without AI there is no negotiation.
-- **Technological Implementation:** server-enforced price limits, private agent limits that never leak, streamed turns, idempotent capture, graceful fallbacks.
-- **Potential Impact:** a friendly, transparent way to picture agent-to-agent commerce, with the human always approving the payment.
+- **Agentic commerce:** the agents research (Channel3), reason, and close the purchase with a tool call that creates the PayPal order, with the human approving.
+- **Most creative / design:** pixel characters replace every "typing..." and spinner; a calm dark interface with handwritten touches.
+- **Best demo delivery:** an argument you can follow in a minute, a real price comparison, a real payment.
+- **PayPal + AI:** without the AI there's no advice; without PayPal there's no purchase.
+- **Technological implementation:** server-side prices that the client can't touch, validated tool calls, no invented prices, interactive pauses in a live stream, idempotent capture, graceful fallbacks.
+- **Potential impact:** helps people spend less and trust shopping agents more.
 
 ## Constraints that shape the design
 
-- Built solo in about 48 hours, so there is one screen, one flow and no database.
-- Judges open it alone on a phone, so it must work cold with no setup.
-- It must be impossible for the client to tamper with the price.
-- Sandbox money only. The result still has to feel real.
+- Built solo in about 48 hours: one flow, no accounts, no database.
+- Judges open it alone on a phone: it must work cold with no setup.
+- Prices must be impossible for the client to tamper with.
+- Sandbox money only.
 
 ## Not in scope
 
-Accounts, a real marketplace, multi-item carts, refunds, admin or analytics. If it isn't visible in the 3-minute video, we don't build it.
+Accounts, wishlists, price alerts, carts, refunds, admin or analytics. If it isn't in the 3-minute video, we don't build it.

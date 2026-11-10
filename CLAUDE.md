@@ -1,6 +1,6 @@
 # Haggl: PayPal AI Hackathon
 
-Haggl is a mobile-first web app where two AI agents (a buyer and a grumpy shopkeeper) negotiate a price live as pixel-art characters. When they agree, the seller agent closes the deal by calling a tool that creates a PayPal sandbox order at the negotiated price. The user approves in PayPal and gets a SOLD screen. One human (the owner) drives several parallel Claude sessions, so the rules below keep them from colliding.
+Haggl is a web app where two pixel-art AI advisors, Spark (treat yourself) and Penny (frugal skeptic), argue about something the user is thinking of buying. They check what it costs at other stores (Channel3), ask the user a couple of tap-to-answer questions, and give a verdict. If the user says buy, Spark's agent closes the purchase by calling a tool that creates a PayPal sandbox order at the store's fixed price. The user approves in PayPal and gets a receipt. One human (the owner) drives several parallel Claude sessions, so the rules below keep them from colliding.
 
 Read these first, in this order:
 
@@ -17,7 +17,7 @@ Read these first, in this order:
 They come from `docs/RUNBOOK.md`. Breaking one can get us disqualified, so they beat anything else here.
 
 - **Nothing may look unfinished.** No dead buttons, no "coming soon", no placeholder text or lorem ipsum. Hide a feature that isn't working.
-- **PayPal AND AI must both be real.** PayPal sandbox integration is central, and the AI does the negotiating. Mockups, static prototypes and fake payments do not count.
+- **PayPal AND AI must both be real.** PayPal sandbox integration is central, and the AI does the research, the debate and the closing tool call. Mockups, static prototypes and fake payments do not count.
 - **The repo is public.** A visible MIT `LICENSE`, a README with setup and run steps, and no secrets anywhere (code, logs, fixtures, PR text, screenshots). If a key leaks, tell the human immediately so it can be rotated.
 - **Submission closes Thu Nov 12 2026, 12:00pm PST (1:00pm Mountain).** After about 10:00am Mountain Thursday, merge only fixes.
 - **After the deadline, change nothing** (no commits, README edits or video swaps) until winners are announced (around Dec 21). The live demo, its test credentials and the API keys behind it must keep working until then.
@@ -27,7 +27,7 @@ They come from `docs/RUNBOOK.md`. Breaking one can get us disqualified, so they 
 
 **If a judge won't see it or touch it in the 3-minute video, don't build it.** The demo path is:
 
-pick an item → (optional nudge) → watch Bao and Mr. Pickle haggle → deal → seller agent creates the PayPal order → approve in PayPal → SOLD screen and share card
+search → pick a product and price → watch Spark and Penny debate (pixel characters instead of typing dots) → answer their questions → verdict → Buy → Spark's agent creates the PayPal order → approve in PayPal → receipt (or Skip → "saved you $X")
 
 Making that path work, look great and hold up on a phone beats any new feature.
 
@@ -38,26 +38,26 @@ Making that path work, look great and hold up on a phone beats any new feature.
 
 ## Stack (decided)
 
-Next.js App Router, TypeScript, Tailwind. Anthropic SDK called directly (no agent frameworks). Default model `claude-haiku-5-5` for fast turns; `AI_MODEL` can switch to `claude-sonnet-5-5`. In-memory deal store (single Render instance). Deployed to Render as a Node web service. No database.
+Next.js App Router, TypeScript, Tailwind. Anthropic SDK called directly (no agent frameworks). Default model `claude-haiku-5-5` for fast turns; `AI_MODEL` can switch to `claude-sonnet-5-5`. In-memory product and purchase stores (single Render instance). Channel3 for product search and prices. Deployed to Render as a Node web service. No database.
 
-Env vars are listed in `.env.example`. `AI_MODE=mock` plays scripted negotiations so development costs nothing; `AI_MODE=live` is for testing the real thing and for the demo.
+Env vars are listed in `.env.example`. `AI_MODE=mock` plays scripted debates and `SEARCH_MODE=mock` serves saved Channel3 fixtures, so development costs nothing; `AI_MODE=live` is for testing the real thing and for the demo.
 
 ## How the code must behave
 
-- **The server decides the price.** The client never sends a price to checkout. `buyerMax` and `sellerFloor` are enforced in code, not just in prompts: if an agent breaks its limit, reject the move and re-prompt once, then clamp. Max 8 rounds.
-- **Honest progress.** Character states are driven by real server stages (`search`, `buyer_think`, `seller_think`, `checkout`, `capture`), not fake timers.
-- **Never show a spinner or "Thinking...".** A pixel character with a speech bubble replaces it. Bubble lines come from static pools in `data/lines.ts`, so they appear instantly and cost no AI call.
-- **Never look broken.** If an AI turn takes over 12 seconds or fails, retry once, then fall back to an in-character scripted move so the negotiation still finishes. A PayPal failure shows an in-character error and a retry button.
-- **Protect the key.** Cap `max_tokens`, cap rounds, and rate-limit `/api/negotiate` per IP so the public demo can't drain the Anthropic budget.
+- **The stores set the price; the server enforces it.** The client never sends a price. Purchase prices are read from the server's stored Channel3 offers. Advisors may not mention a price that isn't in the evidence (enforced in code). Max 8 advisor messages.
+- **Honest progress.** Character states are driven by real server stages (`search`, `think`, `lookup`, `waiting_user`, `verdict`, `checkout`, `capture`), not fake timers.
+- **Never show a spinner, typing dots or "Thinking...".** The pixel character who is working pops into the chat with a line instead. Lines come from static pools in `data/lines.ts`, so they appear instantly and cost no AI call.
+- **Never look broken.** If an AI turn takes over 12 seconds or fails, retry once, then fall back to an in-character scripted move so the debate still finishes. If Channel3 fails, fall back to fixtures. A PayPal failure shows an in-character error and a retry button.
+- **Protect the key.** Cap `max_tokens`, cap rounds, and rate-limit `/api/debate` and `/api/search` per IP so the public demo can't drain the Anthropic budget.
 - **Secrets stay server-side.** Only `NEXT_PUBLIC_*` values reach the browser, and nothing secret is ever `NEXT_PUBLIC_`.
-- **Phone first.** Design for a 390px-wide screen with real tap targets (44px minimum). Test on a real phone over HTTPS before calling anything done.
+- **Phone first, full width.** Wide screens use the full width (two chat screens side by side); phones get one thread. Design for a 390px-wide phone with real tap targets (44px minimum). Test on a real phone over HTTPS before calling anything done.
 - **Respect `prefers-reduced-motion`.** Characters still show state and speech, with less animation.
 
 ## How to work (one human, several parallel Claude sessions)
 
 **1. Get into a worktree before you change anything.** Never work on `main` or in the main checkout. If `git branch --show-current` says `main`, create a worktree with `git worktree add .claude/worktrees/<name> -b <name> origin/main` (or use the EnterWorktree tool if you have it).
 
-**2. Name it `<lane>-<short-name>`,** for both the worktree and the branch, for example `engine-seller-persona`, `paypal-capture`, `ui-speech-bubbles`. Lanes: `engine`, `paypal`, `ui`, `ship`. If the session started with a random branch name, rename it before your first push: `git branch -m <lane>-<short-name>`.
+**2. Name it `<lane>-<short-name>`,** for both the worktree and the branch, for example `engine-seller-persona`, `paypal-capture`, `ui-speech-bubbles`. Lanes: `engine`, `search`, `paypal`, `ui`, `ship`. If the session started with a random branch name, rename it before your first push: `git branch -m <lane>-<short-name>`.
 
 **3. Sync first.** Run `git fetch origin && git merge origin/main`, then install dependencies if `package.json` changed. If you haven't read `docs/RUNBOOK.md` this session, read it now.
 
@@ -85,9 +85,10 @@ Stay inside your lane's files. If you must touch another lane, keep it tiny and 
 
 | Lane | Owns |
 |---|---|
-| `engine` | `lib/negotiate/*`, `app/api/negotiate/*`, `data/products.ts` |
-| `paypal` | `lib/paypal/*`, `app/api/checkout/*`, `app/api/capture/*`, `app/deal/*` |
-| `ui` | `components/pixel/*`, `app/(game)/*`, `data/lines.ts`, global styles and design tokens |
+| `engine` | `lib/debate/*`, `app/api/debate/*`, `app/api/buy/*`, `scripts/debate.ts` |
+| `search` | `lib/channel3/*`, `app/api/search/*`, `data/fixtures/*` |
+| `paypal` | `lib/paypal/*`, `app/api/checkout/*`, `app/api/capture/*` |
+| `ui` | `components/pixel/*`, `app/(app)/*`, `app/receipt/*`, `data/lines.ts`, `styles/tokens.css`, global styles and fonts |
 | `ship` | `README.md`, `docs/DEVPOST.md`, deployment config, smoke script |
 
 ## Working alongside everyone
@@ -115,6 +116,6 @@ Stay inside your lane's files. If you must touch another lane, keep it tiny and 
 - Check for an existing helper or component before writing one.
 - Use the shared design tokens and components, or several sessions will produce several looks.
 - Keep code plain and short; the owner has to be able to explain all of it.
-- Keep the pixel look consistent: integer-scaled low-res canvas, the shared palette, the same outline colour, HTML overlays for crisp text.
+- Keep the look consistent: the shared tokens, the two advisor accents, the handwritten font only for character lines and the verdict, integer-scaled pixel sprites, HTML for all text. Shared stores (`lib/products.ts`, `lib/purchases.ts`, `lib/types.ts`) change only by small, stated additions.
 
 Before you call something done, run it and see it work, and say plainly what you did and didn't check.
