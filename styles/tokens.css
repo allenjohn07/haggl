@@ -1,0 +1,42 @@
+/* Haggl design tokens. Owned by the `ui` lane; every screen uses these.
+   Dark, calm, minimal. One accent per advisor: Spark warm, Penny cool.
+   Contrast: text and muted pass WCAG AA on bg, surface and surface-2. */
+
+:root {
+  /* Surfaces */
+  --bg: #09090c;
+  --bg-soft: #0e0e13;
+  --surface: #14141b;
+  --surface-2: #1c1c25;
+  --surface-3: #262631;
+  --line: #2b2b37;
+  --line-soft: #1f1f29;
+
+  /* Text */
+  --text: #eeedf3;
+  --muted: #a9a8b8;   /* 8.0:1 on bg, 7.0:1 on surface-2 */
+  --faint: #8d8c9e;   /* 5.6:1 on bg, 4.9:1 on surface-2 */
+  --ink: #121016;     /* dark text on light or accent fills */
+
+  /* Spark: warm */
+  --spark: #ff7a5c;
+  --spark-2: #ffc857;
+  --spark-soft: #2a1714;
+  --spark-glow: rgb(255 112 84 / 0.45);
+
+  /* Penny: cool */
+  --penny: #45d1b5;
+  --penny-2: #a6f2da;
+  --penny-soft: #0f2522;
+  --penny-glow: rgb(69 209 181 / 0.4);
+
+  /* You (the user) */
+  --you: #e9e7f5;
+
+  /* PayPal button */
+  --paypal: #ffc439;
+
+  --radius: 18px;
+  --radius-lg: 28px;
+  --shadow-raised: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 12px 32px -12px rgb(0 0 0 / 0.6);
+}
