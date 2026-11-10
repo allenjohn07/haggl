@@ -75,8 +75,15 @@ export function useDebate(productId: string, offerId: string, initial: { product
     const ctrl = new AbortController();
     const signal = ctrl.signal;
     const hold = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    // Items are appended only if their id isn't already shown.
     const set = (fn: (s: DebateState) => DebateState) => {
-      if (!signal.aborted) setState(fn);
+      if (!signal.aborted)
+        setState((s) => {
+          const next = fn(s);
+          const seen = new Set<string>();
+          const items = next.items.filter((it) => !seen.has(it.id) && seen.add(it.id));
+          return items.length === next.items.length ? next : { ...next, items };
+        });
     };
     const pop = (advisor: Advisor, st: PixelState, text: string): Pop => ({ advisor, state: st, line: text, key: ++popKey.current });
     const fail = (kind: "failed" | "busy") => {
@@ -101,7 +108,9 @@ export function useDebate(productId: string, offerId: string, initial: { product
           if (signal.aborted) return;
           if (event === "start") {
             const d = data as Start;
-            set((s) => ({ ...s, status: "live", debateId: d.debateId, product: d.product, picked: d.picked }));
+            // A new stream is a new debate: start from an empty chat. React keeps state when this effect
+            // re-runs (Fast Refresh, Strict Mode), so old items would otherwise show twice.
+            set((s) => ({ ...s, items: [], pop: null, huddle: null, verdict: undefined, moods: IDLE, status: "live", debateId: d.debateId, product: d.product, picked: d.picked }));
             await hold(BEAT.start);
           } else if (event === "stage") {
             const d = data as StageEv;
