@@ -34,7 +34,7 @@ async function cached(key: string, run: () => Promise<C3Result[]>): Promise<Prod
     }
     return products;
   } catch (e) {
-    console.warn(`[channel3] ${key.split(":")[0]} failed, using fixtures:`, e instanceof Error ? e.message : "unknown");
+    console.warn(`[channel3] ${key.split(":")[0]} failed:`, e instanceof Error ? e.message : "unknown");
     return [];
   }
 }
@@ -56,8 +56,17 @@ export async function findAlternatives(product: Product, limit = 3): Promise<Pro
       .sort((a, b) => bestOffer(a).price - bestOffer(b).price)
       .slice(0, limit);
 
+  // Fixture products get fixture alternatives. Live products only ever get Channel3 results:
+  // if Channel3 fails, [] means "no cheaper alternatives found" (never sample data next to real prices).
+  const set = fixtureSetFor(product.id);
+  if (set || product.id.startsWith("fx-")) {
+    const found = pick(set?.products ?? []);
+    rememberProducts(found);
+    return found;
+  }
+
   let found: Product[] = [];
-  if (live() && !product.id.startsWith("fx-")) {
+  if (live()) {
     const cap = Math.round((max - 0.01) * 100) / 100;
     found = pick(await cached(`similar:${product.id}`, () => c3Similar(product.id, 12, cap)));
     if (!found.length) {
@@ -65,7 +74,6 @@ export async function findAlternatives(product: Product, limit = 3): Promise<Pro
       found = pick(await cached(`altsearch:${normalize(q)}:${cap}`, () => c3Search(q, 12, cap)));
     }
   }
-  if (!found.length) found = pick(fixtureSetFor(product.id, product.title).products);
   rememberProducts(found);
   return found;
 }

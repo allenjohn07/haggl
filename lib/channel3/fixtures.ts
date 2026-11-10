@@ -38,6 +38,7 @@ export function fixtureSet(text: string): FixtureSet {
   return best;
 }
 
-export function fixtureSetFor(productId: string, title: string): FixtureSet {
-  return sets().find((s) => s.products.some((p) => p.id === productId)) ?? fixtureSet(title);
+// The fixture set a fixture product belongs to, or undefined for a live product.
+export function fixtureSetFor(productId: string): FixtureSet | undefined {
+  return sets().find((s) => s.products.some((p) => p.id === productId));
 }
