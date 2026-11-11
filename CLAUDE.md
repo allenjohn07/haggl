@@ -1,6 +1,6 @@
 # Haggl: PayPal AI Hackathon
 
-Haggl is a web app where two pixel-art AI advisors, Spark (treat yourself) and Penny (frugal skeptic), argue about something the user is thinking of buying. They check what it costs at other stores (Channel3), ask the user a couple of tap-to-answer questions, and give a verdict. If the user says buy, Spark's agent closes the purchase by calling a tool that creates a PayPal sandbox order at the store's fixed price. The user approves in PayPal and gets a receipt. One human (the owner) drives several parallel Claude sessions, so the rules below keep them from colliding.
+Haggl is a web app where two pixel-art AI advisors, Spark (treat yourself) and Penny (frugal skeptic), argue about something the user is thinking of buying. They check what it costs at other stores (Channel3), ask the user a couple of tap-to-answer questions, and give a verdict. If the user says buy, Spark's agent closes the purchase by calling a tool that creates a PayPal sandbox order at the store's fixed price. The user approves in PayPal and gets a receipt. One human (the owner) builds this with Claude, sometimes with a parallel agent, so the rules below keep the work tidy.
 
 Read these first, in this order:
 
@@ -53,15 +53,15 @@ Env vars are listed in `.env.example`. `AI_MODE=mock` plays scripted debates and
 - **Phone first, full width.** Wide screens use the full width (the face-off stage: Spark and Penny facing each other, one speech bubble each, history in the Transcript sheet); phones get the same stage, smaller. Design for a 390px-wide phone with real tap targets (44px minimum). Test on a real phone over HTTPS before calling anything done.
 - **Respect `prefers-reduced-motion`.** Characters still show state and speech, with less animation.
 
-## How to work (one human, several parallel Claude sessions)
+## How to work (one human, one checkout)
 
-**1. Get into a worktree before you change anything.** Never work on `main` or in the main checkout. If `git branch --show-current` says `main`, create a worktree with `git worktree add .claude/worktrees/<name> -b <name> origin/main` (or use the EnterWorktree tool if you have it).
+**1. Work on a short branch in the main checkout.** Never commit to `main` directly: `git switch main && git pull && git switch -c <lane>-<short-name>`. Use a worktree only when two agents must run at the same time: `git worktree add .claude/worktrees/<name> -b <name> origin/main`, then `npm ci` inside it (never symlink `node_modules`; Turbopack breaks). Each worktree costs about 600 MB, so remove it with `git worktree remove` as soon as its PR merges, and never keep more than two.
 
-**2. Name it `<lane>-<short-name>`,** for both the worktree and the branch, for example `engine-seller-persona`, `paypal-capture`, `ui-speech-bubbles`. Lanes: `engine`, `search`, `paypal`, `ui`, `ship`. If the session started with a random branch name, rename it before your first push: `git branch -m <lane>-<short-name>`.
+**2. Name the branch `<lane>-<short-name>`,** for example `engine-seller-persona`, `paypal-capture`, `ui-speech-bubbles`. Lanes: `engine`, `search`, `paypal`, `ui`, `ship`. If the session started with a random branch name, rename it before your first push: `git branch -m <lane>-<short-name>`.
 
 **3. Sync first.** Run `git fetch origin && git merge origin/main`, then install dependencies if `package.json` changed. If you haven't read `docs/RUNBOOK.md` this session, read it now.
 
-**4. Commit small and push each time.** Your first commit adds `docs/wip/<branch>.md` (who you are, what you're building, which files you'll touch, and a status line you keep current). Delete it in your last commit before merging. Open a draft PR after your first commit:
+**4. Commit small and push each time.** Open a draft PR after your first commit:
 
     git push -u origin HEAD
     gh pr create --draft --fill
@@ -77,7 +77,7 @@ Do not add `Co-authored-by` lines to commits or PRs unless the human asks.
 
 If GitHub says "not mergeable" or "base branch was modified", wait a few seconds and retry.
 
-**6. Clean up.** A merged branch is finished; never commit to it again. For more work, `git switch -c <lane>-<next-thing> origin/main`. Otherwise tell the human it's merged.
+**6. Clean up.** A merged branch is finished; never commit to it again. Run `git switch main && git pull && git branch -D <branch>`, and remove the worktree if you used one. The owner's dev server runs from the main checkout (port 3000), so leave the checkout on `main` when you're done.
 
 ## Lanes and file ownership
 
