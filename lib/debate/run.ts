@@ -3,8 +3,9 @@ import type { Advisor, Ask, Evidence, Offer, Product, ProductCard, Stage, Verdic
 import { liveAsk, liveSay, liveStep, liveVerdict, type Say } from "./agents";
 import { between, scriptedAsk, scriptedLookup, scriptedReaction, scriptedSay, sleep } from "./mock";
 import {
-  ASK_AFTER, MAX_MESSAGES, NAMES, REACTION_MAX, TEXT_MAX, clip, cleanAsk, dropUnbacked, knownPrices, ruleVerdict,
-  unbackedAmounts, validateVerdict, type Answer, type Message, type State,
+  ASK_AFTER, MAX_MESSAGES, NAMES, OPTION_MAX, QUESTION_MAX, REACTION_MAX, TEXT_MAX, TEXT_SOFT, cleanAsk, dropSentencesWith, dropUnbacked, knownPrices,
+  mentionsAlternative, opener, overusedAmounts, ruleVerdict, trimSentences, unbackedAmounts, validateVerdict,
+  type Answer, type Message, type State,
 } from "./rules";
 import { deleteDebate, expireAsk, openAsk, type Debate } from "./store";
 import { lookupLabel, runLookup, type LookupTool } from "./tools";
@@ -56,12 +57,36 @@ async function* debateLoop(debate: Debate, product: Product, picked: Offer, { si
 
   yield { event: "start", data: { debateId: debate.debateId, product: toCard(product), picked } };
 
+  // Penny's lookups are forced: the price check on her first turn, alternatives on her second.
+  // Spark may take a closer look once, if the AI wants to.
   function allowedLookups(advisor: Advisor): LookupTool[] {
-    if (advisor === "penny" && !s.used.check_prices) return ["check_prices"]; // Penny's first turn, always
-    const out: LookupTool[] = [];
-    if (!s.used.find_alternatives) out.push("find_alternatives");
-    if (advisor === "spark" && !s.used.look_closer) out.push("look_closer");
+    if (advisor === "penny") {
+      if (!s.used.check_prices) return ["check_prices"];
+      if (!s.used.find_alternatives) return ["find_alternatives"];
+      return [];
+    }
+    return s.used.look_closer ? [] : ["look_closer"];
+  }
+
+  // What is wrong with a draft message, as instructions for one rewrite.
+  // `needsAlt`: Penny just found alternatives, or Spark is answering them, so the message must name one.
+  function problems(n: number, say: Say, known: number[], needsAlt: boolean): string[] {
+    const out: string[] = [];
+    const bad = unbackedAmounts(say.text, known);
+    if (bad.length) out.push(`It mentions ${bad.map((b) => `$${b}`).join(", ")}, which is not in the facts. Use only prices from the facts.`);
+    if (say.text.trim().length > TEXT_MAX) out.push(`It is ${say.text.trim().length} characters. Keep it under ${TEXT_SOFT}, never over ${TEXT_MAX}.`);
+    const worn = overusedAmounts(say.text, s);
+    if (worn.length) out.push(`It repeats ${worn.map((b) => `$${b}`).join(", ")}, already said twice. Make a new point instead.`);
+    if (needsAlt && !mentionsAlternative(say.text, s)) out.push("It doesn't name the cheaper alternative Penny found. Mention it by name or price.");
+    if (n > 1 && reactionIssue(say.reaction)) out.push(`The reaction must be max ${REACTION_MAX} characters and start with a word no earlier reaction started with (and not "Fair").`);
     return out;
+  }
+
+  function reactionIssue(reaction: string): boolean {
+    const r = reaction.trim();
+    if (!r || r.length > REACTION_MAX) return true;
+    const first = opener(r);
+    return first === "fair" || s.messages.some((m) => m.reaction && opener(m.reaction) === first);
   }
 
   async function* lookup(advisor: Advisor, tool: LookupTool): AsyncGenerator<DebateEvent> {
@@ -84,18 +109,21 @@ async function* debateLoop(debate: Debate, product: Product, picked: Offer, { si
 
     // 1. Maybe a real lookup first.
     const allowed = allowedLookups(advisor);
+    const forced = advisor === "penny" && allowed.length > 0;
+    let altsFresh = false;
     if (allowed.length) {
       let tool: LookupTool | null = null;
       if (ai) {
-        const step = await liveStep(advisor, s, allowed, fresh, signal);
+        const step = await liveStep(advisor, s, allowed, forced, fresh, signal);
         if (!step) ai = false;
         else if ("lookup" in step) tool = step.lookup;
         else say = step.say;
       }
       if (!ai) tool = scriptedLookup(advisor, s, allowed);
-      if (allowed[0] === "check_prices") tool = "check_prices";
+      if (forced) tool = allowed[0]; // the server runs it even if the AI didn't
       if (tool) {
         yield* lookup(advisor, tool);
+        altsFresh = tool === "find_alternatives" && s.alternatives.length > 0;
         say = null; // speak with the new evidence in hand
         yield think(advisor);
         t0 = Date.now();
@@ -110,23 +138,31 @@ async function* debateLoop(debate: Debate, product: Product, picked: Offer, { si
     }
     say ??= scriptedSay(advisor, s, fresh);
 
-    // 3. No invented prices: re-prompt once, then drop the offending sentences.
+    // 3. The rules: no invented prices, max 200 characters, no price said a third time, Penny's
+    // alternative named, fresh reactions. Re-prompt once with every problem, then fix in code.
     const known = knownPrices(s);
-    let text = clip(say.text, TEXT_MAX);
-    const bad = unbackedAmounts(text, known);
-    if (bad.length && ai) {
-      const fix = `Your draft mentioned ${bad.map((b) => `$${b}`).join(", ")}, which is not in the facts. Rewrite it using only prices from the facts.`;
+    const needsAlt = altsFresh || (advisor === "spark" && n === 5 && s.alternatives.length > 0);
+    const issues = problems(n, say, known, needsAlt);
+    if (issues.length && ai) {
+      const fix = `Your draft was: "${say.text}" (reaction: "${say.reaction}"). Rewrite it. Problems:\n- ${issues.join("\n- ")}`;
       const retry = await liveSay(advisor, s, fresh, signal, fix);
       if (!retry) ai = false;
-      else if (!unbackedAmounts(retry.text, known).length) text = clip(retry.text, TEXT_MAX);
+      else if (problems(n, retry, known, needsAlt).length <= issues.length && !unbackedAmounts(retry.text, known).length) say = retry;
     }
+    let text = say.text.replace(/\s+/g, " ").trim();
     if (unbackedAmounts(text, known).length) text = dropUnbacked(text, known);
-    if (!text) text = dropUnbacked(clip(scriptedSay(advisor, s, fresh).text, TEXT_MAX), known) || "Hmm. Let me think about that one.";
+    if (overusedAmounts(text, s).length) text = dropSentencesWith(text, (x) => overusedAmounts(x, s).length > 0) || text;
+    text = trimSentences(text, TEXT_MAX);
+    // Over the 160 target: drop trailing sentences if a full thought of 100+ characters is left.
+    const tight = trimSentences(text, TEXT_SOFT);
+    const keepsAlt = !needsAlt || mentionsAlternative(tight, s);
+    if (text.length > TEXT_SOFT && tight.length >= 100 && !tight.endsWith("…") && keepsAlt) text = tight;
+    if (!text) text = dropUnbacked(trimSentences(scriptedSay(advisor, s, fresh).text, TEXT_MAX), known) || "Hmm. Let me think about that one.";
 
     let reaction: string | undefined;
     if (n > 1) {
-      reaction = clip(say.reaction || scriptedReaction(advisor, s), REACTION_MAX);
-      if (unbackedAmounts(reaction, known).length) reaction = scriptedReaction(advisor, s);
+      reaction = say.reaction.trim();
+      if (reactionIssue(reaction) || unbackedAmounts(reaction, known).length) reaction = scriptedReaction(advisor, s);
     }
 
     await padFrom(t0, isMock ? 1500 : 1000, isMock ? 3000 : 1500);
@@ -140,12 +176,19 @@ async function* debateLoop(debate: Debate, product: Product, picked: Offer, { si
     yield think(advisor, `${NAMES[advisor]} has a question for you`);
     const t0 = Date.now();
     let q = null;
+    // Short question, short chips, no invented prices: one rewrite, then a scripted ask.
+    const known = knownPrices(s);
+    const ok = (raw: unknown) => {
+      const c = cleanAsk(raw);
+      return c && ![c.question, ...c.options].some((x) => unbackedAmounts(x, known).length) ? c : null;
+    };
     if (ai) {
       const raw = await liveAsk(advisor, s, topic, signal);
       if (!raw) ai = false;
-      q = cleanAsk(raw);
-      const known = knownPrices(s);
-      if (q && [q.question, ...q.options].some((x) => unbackedAmounts(x, known).length)) q = null;
+      else if (!(q = ok(raw))) {
+        const fix = `Your draft was ${JSON.stringify(raw)}. Rewrite it: question max ${QUESTION_MAX} characters, 2 to 4 options of max ${OPTION_MAX} characters each, only prices from the facts.`;
+        q = ok(await liveAsk(advisor, s, topic, signal, fix));
+      }
     }
     q ??= scriptedAsk(advisor, s);
     await padFrom(t0, 800, 1500);

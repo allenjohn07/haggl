@@ -24,6 +24,7 @@ async function main() {
   const amounts: { text: string; at: number }[] = [];
   const allowed: number[] = [picked.price];
   let verdictOk = false;
+  const openers = new Set<string>();
 
   for await (const e of runDebate(debate, product, picked, { signal: new AbortController().signal, pace: fast ? 0 : 1 })) {
     if (e.event === "ping") continue;
@@ -32,10 +33,15 @@ async function main() {
     if (e.event === "message") {
       messages++;
       amounts.push({ text: `${e.data.text} ${e.data.reaction ?? ""}`, at: messages });
+      if (e.data.text.length > 200) failures.push(`message ${messages} is ${e.data.text.length} chars (max 200)`);
+      const first = e.data.reaction?.toLowerCase().match(/[a-z]+/)?.[0];
+      if (first && openers.has(first)) failures.push(`message ${messages} reaction starts like an earlier one ("${first}")`);
+      if (first) openers.add(first);
     }
     if (e.event === "ask") {
       asks++;
-      const { askId, options } = e.data;
+      const { askId, options, question } = e.data;
+      if (question.length > 70 || options.some((o) => o.length > 24)) failures.push(`ask ${asks} is too long`);
       setTimeout(() => answerAsk(debate.debateId, askId, options[0]), fast ? 50 : 800);
     }
     if (e.event === "answer" && e.data.answer) allowed.push(...[...e.data.answer.matchAll(/\$(\d+(?:\.\d+)?)/g)].map((m) => Number(m[1])));
@@ -43,11 +49,14 @@ async function main() {
       const offer = getOffer(e.data.productId, e.data.offerId);
       verdictOk = !!offer && offer.price === e.data.price;
       if (!verdictOk) failures.push("verdict price does not match the stored offer");
+      if (e.data.headline.length > 50 || e.data.reasons.some((r) => r.length > 80)) failures.push("verdict headline or a reason is too long");
     }
   }
 
   // Same rule as lib/debate/rules: an amount must be within $1 of a known price or a gap from the pick.
-  const known = [...allowed, ...allowed.map((p) => Math.abs(picked.price - p))];
+  // Cost per use at the picked price (daily and weekly for a year) is given to the advisors as a fact.
+  const perUse = [picked.price / 365, picked.price / 52].map((x) => Math.round(x * 100) / 100);
+  const known = [...allowed, ...allowed.map((p) => Math.abs(picked.price - p)), ...perUse];
   for (const m of amounts) {
     for (const [, n] of m.text.matchAll(/\$\s?(\d[\d,]*(?:\.\d{1,2})?)/g)) {
       const v = Number(n.replace(/,/g, ""));
