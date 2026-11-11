@@ -14,11 +14,9 @@ export function TopBar({
 }) {
   const shown = crumbs.filter(Boolean) as string[];
   const mark = (
-    <span className="flex shrink-0 items-center gap-2">
-      {/* eslint-disable-next-line @next/next/no-img-element -- a tiny static logo, no optimisation needed */}
-      <img src="/logo.png" alt="" width={17} height={20} className="h-5 w-auto" />
-      <span className="text-[14px] font-semibold tracking-[-0.02em] text-foreground">Haggl</span>
-    </span>
+    // The pixel wordmark. 18px tall = exactly 2 screen pixels per wordmark pixel, so it stays crisp.
+    // eslint-disable-next-line @next/next/no-img-element -- a tiny static SVG, no optimisation needed
+    <img src="/haggl-wordmark.svg" alt="Haggl" width={42} height={18} className="block h-[18px] w-[42px] shrink-0" />
   );
   return (
     <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background px-2 sm:px-4">
