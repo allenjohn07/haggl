@@ -1,7 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Advisor } from "@/lib/types";
 import { facts, system, turnBrief } from "./personas";
-import type { Answer, State } from "./rules";
+import {
+  HEADLINE_MAX, OPTION_MAX, QUESTION_MAX, REACTION_MAX, REASON_MAX, TEXT_MAX, TEXT_TARGET, type Answer, type State,
+} from "./rules";
 import type { LookupTool } from "./tools";
 
 // Live mode: short Anthropic calls, each answered through a strict tool.
@@ -24,22 +26,22 @@ function tool(name: string, description: string, properties: Record<string, unkn
 const str = (description: string) => ({ type: "string", description });
 
 const SAY = tool("say", "Send your message to the other advisor.", {
-  text: str("Your message, max 280 characters, one to three sentences."),
-  reaction: str("A short reaction (max 60 characters) to the other advisor's last message. Empty string on the very first message."),
+  text: str(`Your message: ${TEXT_TARGET} characters, never more than ${TEXT_MAX}. One or two sentences.`),
+  reaction: str(`A punchy gut reaction (max ${REACTION_MAX} characters) to the other advisor's last message. Empty string on the very first message.`),
 });
 const LOOKUPS: Record<LookupTool, Anthropic.Tool> = {
   check_prices: tool("check_prices", "Pull this exact item's prices at every store that sells it.", {}),
-  find_alternatives: tool("find_alternatives", "Find similar products, cheapest first. Can be used once per debate.", {}),
+  find_alternatives: tool("find_alternatives", "Find similar, cheaper products, cheapest first. Once per debate.", {}),
   look_closer: tool("look_closer", "Read the item's rating, review count and key features.", {}),
 };
 const ASK = tool("ask_user", "Ask the user one tap-to-answer question.", {
-  question: str("The question, max 90 characters."),
-  options: { type: "array", items: { type: "string" }, description: "2 to 4 answer chips, each max 28 characters." },
+  question: str(`The question, max ${QUESTION_MAX} characters.`),
+  options: { type: "array", items: { type: "string" }, description: `2 to 4 answer chips, each max ${OPTION_MAX} characters (two or three words).` },
 });
 const VERDICT = tool("give_verdict", "Give the joint verdict.", {
   call: { type: "string", enum: ["buy", "buy_elsewhere", "wait", "skip"] },
-  headline: str("Max 60 characters, written together by Spark and Penny."),
-  reasons: { type: "array", items: { type: "string" }, description: "2 to 4 short reasons." },
+  headline: str(`Punchy, max ${HEADLINE_MAX} characters, written together by Spark and Penny.`),
+  reasons: { type: "array", items: { type: "string" }, description: `2 or 3 reasons, each max ${REASON_MAX} characters.` },
   productId: str("The product to buy if the user says yes: the user's pick or a shown alternative."),
   offerId: str("The offer (store) for that product, from the lookups."),
 });
@@ -108,14 +110,14 @@ const asSay = (c: ToolCall): Say | null =>
     : null;
 
 // First call of a turn when lookups are allowed: the advisor either looks something up or speaks.
-export function liveStep(advisor: Advisor, s: State, lookups: LookupTool[], fresh: Answer | undefined, signal: AbortSignal) {
-  const only = lookups.length === 1 && lookups[0] === "check_prices";
+// `only` means this turn must start with that one lookup (Penny's price check, then her alternatives).
+export function liveStep(advisor: Advisor, s: State, lookups: LookupTool[], only: boolean, fresh: Answer | undefined, signal: AbortSignal) {
   const user = [
     facts(s),
     turnBrief(s, fresh),
-    only ? "Before you say anything, call check_prices." : `You may call one lookup tool (${lookups.join(", ")}) before speaking, or just call say.`,
+    only ? `Before you say anything, call ${lookups[0]}.` : `You may call one lookup tool (${lookups.join(", ")}) before speaking, or just call say.`,
   ].join("\n\n");
-  const tools = only ? [LOOKUPS.check_prices] : [...lookups.map((t) => LOOKUPS[t]), SAY];
+  const tools = only ? [LOOKUPS[lookups[0]]] : [...lookups.map((t) => LOOKUPS[t]), SAY];
   return call(system(advisor), user, tools, signal, (c): { lookup: LookupTool } | { say: Say } | null => {
     if (lookups.includes(c.name as LookupTool)) return { lookup: c.name as LookupTool };
     const say = asSay(c);
@@ -129,21 +131,28 @@ export function liveSay(advisor: Advisor, s: State, fresh: Answer | undefined, s
   return call(system(advisor), user, [SAY], signal, asSay);
 }
 
-export function liveAsk(advisor: Advisor, s: State, topic: string, signal: AbortSignal) {
+export function liveAsk(advisor: Advisor, s: State, topic: string, signal: AbortSignal, fix?: string) {
   const user = [
     facts(s),
     `Pause the chat and ask the user one quick question about ${topic}. ` +
-      "Speak to the user directly. Give 2 to 4 short answer options (max 28 characters each). " +
-      "Only use dollar amounts that are in the facts above. Call ask_user.",
-  ].join("\n\n");
+      `Speak to the user directly, in your voice. The question is max ${QUESTION_MAX} characters. ` +
+      `Give 2 to 4 answer options, each max ${OPTION_MAX} characters (two or three words, like "Every day" or "Under $100"). ` +
+      "Only use dollar amounts that are in the facts above.",
+    fix ?? "",
+    "Call ask_user.",
+  ].filter(Boolean).join("\n\n");
   return call(system(advisor), user, [ASK], signal, (c) => (c.name === "ask_user" ? c.input : null));
 }
 
 export function liveVerdict(s: State, signal: AbortSignal) {
   const sys =
-    "You are Spark (treat yourself) and Penny (frugal skeptic) agreeing on a joint verdict for the user. " +
+    "You are Spark (treat yourself) and Penny (frugal skeptic) writing the joint verdict after your debate. " +
     "buy = buy the user's pick as picked; buy_elsewhere = same item at a cheaper store, or a shown alternative; " +
-    "wait = not now; skip = don't buy it. Respect the user's answers, especially their budget. " +
+    "wait = not now; skip = don't buy it. " +
+    "Decide who won the argument from the user's answers: daily use, real need or a budget that fits favour Spark; " +
+    "rarely used, can wait, or over budget favour Penny. A cheaper store for the same item always beats the pricier one. " +
+    `The headline is punchy and a little cheeky, max ${HEADLINE_MAX} characters. ` +
+    `Give 2 or 3 reasons, each max ${REASON_MAX} characters; one may be the loser's dissent ("Spark still thinks...", "Penny is sulking"). ` +
     "Use only productId and offerId values that appear in the facts. Only mention dollar amounts from the facts. " +
     "Respond only by calling give_verdict. Do not include internal or system XML tags in your response.";
   return call(sys, `${facts(s)}\n\nThe debate is over. Call give_verdict.`, [VERDICT], signal, (c) =>
