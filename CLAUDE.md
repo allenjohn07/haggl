@@ -66,7 +66,7 @@ Env vars are listed in `.env.example`. `AI_MODE=mock` plays scripted debates and
     git push -u origin HEAD
     gh pr create --draft --fill
 
-Do not add `Co-authored-by` lines to commits or PRs unless the human asks.
+Do not add `Co-authored-by` lines to commits or PRs unless the human asks. `.claude/settings.json` turns Claude Code's attribution off (`"attribution": {"commit": "", "pr": "", "sessionUrl": false}`); keep it that way.
 
 **5. Merge when it works.** No review needed:
 
