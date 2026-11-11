@@ -32,7 +32,7 @@ Shopping agents are coming, but "an AI that buys things for you" is hard to trus
 - Built solo in about 48 hours: one flow, no accounts, no database.
 - Judges open it alone on a phone: it must work cold with no setup.
 - Prices must be impossible for the client to tamper with.
-- Sandbox money only.
+- Sandbox money only. Our sandbox business account stands in for the store; in production the store is the merchant of record and is paid directly through PayPal's agent checkout.
 
 ## Not in scope
 

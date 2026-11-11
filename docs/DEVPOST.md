@@ -14,7 +14,7 @@ Pixel-art AI advisors debate your purchase, check other stores' prices, ask you 
 
 **What it does.** Search for something you're thinking of buying and pick a store's price. Your two advisors, Spark (treat yourself) and Penny (frugal skeptic), message each other about it. Penny pulls the same item's prices at other stores and cheaper alternatives; Spark digs into ratings and features. Mid-debate they stop and ask you quick questions, and your answers change the argument. They end with a verdict: buy, buy it cheaper elsewhere, wait, or skip. If you tap Buy, Spark's agent closes the purchase by calling a tool that creates a PayPal order for the store's price; you approve in PayPal and get a receipt. Wherever a chat app would show typing dots, the advisor's pixel character pops in and talks instead.
 
-**How we built it.** Next.js and TypeScript on Render. Two Claude agents (Claude Haiku 5.5) take turns through the Anthropic SDK with tool use, streamed to the browser over server-sent events; the stream pauses for the user's answers and resumes. Channel3's product search API supplies products, each store's offer, and similar products. The server stores every offer and decides every price, rejects advisor messages that mention prices not in the evidence, and validates the verdict. The advisor's `create_paypal_order` tool creates a PayPal Orders v2 order in the sandbox; we capture it on return, idempotently. The characters are hand-drawn pixel art on an integer-scaled canvas, and their states follow the real server stages.
+**How we built it.** Next.js and TypeScript on Render. Two Claude agents (Claude Haiku 5.5) take turns through the Anthropic SDK with tool use, streamed to the browser over server-sent events; the stream pauses for the user's answers and resumes. Channel3's product search API supplies products, each store's offer, and similar products. The server stores every offer and decides every price, rejects advisor messages that mention prices not in the evidence, and validates the verdict. The advisor's `create_paypal_order` tool creates a PayPal Orders v2 order in the sandbox; we capture it on return, idempotently. In the sandbox demo our PayPal business account stands in for the store; in production the store would be the merchant of record via PayPal's agent checkout. The characters are hand-drawn pixel art on an integer-scaled canvas, and their states follow the real server stages.
 
 **Challenges.** [FILL IN after the build.]
 
@@ -22,7 +22,7 @@ Pixel-art AI advisors debate your purchase, check other stores' prices, ask you 
 
 **What we learned.** [FILL IN.]
 
-**What's next.** Price-drop alerts for "wait" verdicts, spending limits the advisors respect, and checkout with the real store.
+**What's next.** Real checkout with the store as merchant of record through PayPal's agentic commerce services (Agent Ready, Store Sync), so the agent pays the actual store; only offering Buy for stores that accept PayPal; price-drop alerts for "wait" verdicts; spending limits the advisors respect.
 
 ## Built with
 Next.js, TypeScript, Tailwind CSS, Anthropic Claude API (Claude Haiku 5.5), Channel3 API, PayPal REST API (Orders v2, sandbox), [PayPal Agent Toolkit if used], Render, HTML Canvas.

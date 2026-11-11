@@ -123,6 +123,10 @@ async function Receipt({ params, searchParams }: Pick<PageProps<"/receipt/[purch
               </Row>
             )}
           </dl>
+          <p className="border-t border-border-soft px-4 py-3 text-[12px] leading-relaxed text-muted-foreground">
+            PayPal sandbox payment, no real money. Our sandbox account stood in for {shop}; in production the store is
+            paid directly through PayPal&apos;s agent checkout and ships the order.
+          </p>
         </section>
         <ShareLine text={share} />
         <div>

@@ -198,6 +198,10 @@ export function VerdictSheet({ state, wide, onSkip }: { state: DebateState; wide
                 <Button variant="ghost" onClick={onSkip} className="h-11 text-muted-foreground sm:h-9">
                   Skip
                 </Button>
+                <p className="pt-1 text-center text-[12px] leading-relaxed text-muted-foreground">
+                  PayPal sandbox, no real money. In this demo our sandbox account stands in for the store; in production
+                  the store is paid directly through PayPal&apos;s agent checkout.
+                </p>
               </>
             )}
           </div>
