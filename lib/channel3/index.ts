@@ -1,6 +1,7 @@
 import { bestOffer, rememberProducts } from "@/lib/products";
 import type { Product } from "@/lib/types";
 import { c3Search, c3Similar, type C3Result } from "./client";
+import { dedupe, multiStoreFirst } from "./dedupe";
 import { fixtureSet, fixtureSetFor } from "./fixtures";
 
 // Product search and alternatives. Contract: docs/CONTRACTS.md.
@@ -41,7 +42,9 @@ async function cached(key: string, run: () => Promise<C3Result[]>): Promise<Prod
 
 export async function searchProducts(query: string): Promise<Product[]> {
   const q = normalize(query);
-  let products = live() ? (await cached(`search:${q}`, () => c3Search(q, 12))).slice(0, MAX_RESULTS) : [];
+  // Ask for 30 (Channel3's max), drop near-duplicates, then put multi-store products first among the top 16.
+  const found = live() ? dedupe(await cached(`search:${q}`, () => c3Search(q, 30))) : [];
+  let products = multiStoreFirst(found, MAX_RESULTS * 2).slice(0, MAX_RESULTS);
   if (!products.length) products = fixtureSet(q).products.slice(0, MAX_RESULTS);
   rememberProducts(products);
   return products;
@@ -51,7 +54,7 @@ export async function searchProducts(query: string): Promise<Product[]> {
 export async function findAlternatives(product: Product, limit = 3): Promise<Product[]> {
   const max = bestOffer(product).price;
   const pick = (list: Product[]) =>
-    list
+    dedupe(list)
       .filter((p) => p.id !== product.id && bestOffer(p).price < max)
       .sort((a, b) => bestOffer(a).price - bestOffer(b).price)
       .slice(0, limit);
