@@ -19,7 +19,7 @@ export function TopBar({
     <img src="/haggl-wordmark.svg" alt="Haggl" width={42} height={18} className="block h-[18px] w-[42px] shrink-0" />
   );
   return (
-    <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background px-2 sm:px-4">
+    <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-2 bg-background px-2 sm:px-4">
       {left}
       <nav aria-label="Breadcrumb" className={`flex min-w-0 flex-1 items-center gap-2 text-[13px] ${left ? "" : "pl-2 sm:pl-0"}`}>
         {home ? (

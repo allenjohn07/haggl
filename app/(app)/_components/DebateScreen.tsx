@@ -136,7 +136,7 @@ export function DebateScreen({
             {wide && <Kbd className="border border-border bg-surface-2">Esc</Kbd>}
           </Button>
         }
-        crumbs={wide ? ["Search", shownProduct.title] : ["Spark vs Penny"]}
+        crumbs={wide ? [] : ["Spark vs Penny"]}
         right={status}
       />
       <ProductBar product={shownProduct} picked={state.picked ?? picked} />
