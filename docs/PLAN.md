@@ -9,7 +9,7 @@ The first version (two agents bargaining over a price) was replaced on Tue Nov 1
 | When | Goal | Done means |
 |---|---|---|
 | Tue afternoon | Pivot foundation: docs, contracts, shared types and stores, PayPal moved to purchases. | Merged to `main`, app boots |
-| Tue evening to night | **Engine** debates in mock and live from a terminal script. **Search** returns Channel3 results (fixtures and live). **UI** has the dark theme, the new characters and the chat screens on mock events. | Each lane has a PR merged |
+| Tue evening to night | **Engine** debates in mock and live from a terminal script. **Search** returns Channel3 results (fixtures and live). **UI** has the dark theme, the new characters and the debate stage on mock events. | Each lane has a PR merged |
 | Wed morning | UI on the real stream, verdict, buy, receipt. **First Render deploy.** | Opens on a phone at the Render URL |
 | Wed afternoon | Real-phone test end to end with live AI, live Channel3 and the sandbox buyer. Polish, error states, pacing. | Full demo path works twice in a row |
 | Wed evening | README, Devpost text, test credentials, record the video, upload it **public** to YouTube, **submit.** | Devpost shows "Submitted" |
@@ -19,7 +19,7 @@ The first version (two agents bargaining over a price) was replaced on Tue Nov 1
 
 - `engine`: the debate loop (Spark and Penny, tools, asks and waiting for answers, reactions, no invented prices, verdict), SSE, `/api/debate`, `/api/debate/answer`, `/api/buy` with the `create_paypal_order` tool, mock mode, fallbacks, rate limits, `scripts/debate.ts`.
 - `search`: Channel3 client (`/v1/search`), mapping to `Product`, `findAlternatives`, fixtures for mock mode, `/api/search`.
-- `ui`: dark theme and tokens, fonts (Inter and Geist Mono, shadcn/ui), the pixel advisors, search and picker, the debate screens (two side by side on wide screens, one thread on phones), ask chips, evidence cards, verdict card, buy and skip, the receipt page.
+- `ui`: dark theme and tokens, fonts (Inter and Geist Mono, shadcn/ui), the pixel advisors, search and picker, the face-off stage (bubbles over each advisor, evidence cards between them, Transcript sheet), ask chips, evidence cards, verdict card, buy and skip, the receipt page.
 - `paypal`: done (orders, capture, checkout). Only fixes.
 - `ship`: README, Devpost, deploy config, smoke checks.
 

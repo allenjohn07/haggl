@@ -50,7 +50,7 @@ Env vars are listed in `.env.example`. `AI_MODE=mock` plays scripted debates and
 - **Never look broken.** If an AI turn takes over 12 seconds or fails, retry once, then fall back to an in-character scripted move so the debate still finishes. If Channel3 fails, fall back to fixtures. A PayPal failure shows an in-character error and a retry button.
 - **Protect the key.** Cap `max_tokens`, cap rounds, and rate-limit `/api/debate` and `/api/search` per IP so the public demo can't drain the Anthropic budget.
 - **Secrets stay server-side.** Only `NEXT_PUBLIC_*` values reach the browser, and nothing secret is ever `NEXT_PUBLIC_`.
-- **Phone first, full width.** Wide screens use the full width (two chat screens side by side); phones get one thread. Design for a 390px-wide phone with real tap targets (44px minimum). Test on a real phone over HTTPS before calling anything done.
+- **Phone first, full width.** Wide screens use the full width (the face-off stage: Spark and Penny facing each other, one speech bubble each, history in the Transcript sheet); phones get the same stage, smaller. Design for a 390px-wide phone with real tap targets (44px minimum). Test on a real phone over HTTPS before calling anything done.
 - **Respect `prefers-reduced-motion`.** Characters still show state and speech, with less animation.
 
 ## How to work (one human, several parallel Claude sessions)
