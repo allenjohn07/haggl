@@ -15,12 +15,14 @@ export function Pixel({
   scale = 3,
   className = "",
   flip = false,
+  active = false,
 }: {
   who: Advisor;
   state: PixelState;
   scale?: number;
   className?: string;
   flip?: boolean;
+  active?: boolean; // the advisor who is speaking or working glows brighter
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const reduced = useReducedMotion();
@@ -40,7 +42,8 @@ export function Pixel({
     return () => clearInterval(timer);
   }, [who, state, reduced]);
 
-  const px = SIZE * Math.max(1, Math.round(scale));
+  const n = Math.max(1, Math.round(scale));
+  const px = SIZE * n;
   return (
     <canvas
       ref={ref}
@@ -48,8 +51,8 @@ export function Pixel({
       height={SIZE}
       role="img"
       aria-label={`${NAMES[who]}, ${state}`}
-      className={`pixel shrink-0 ${who === "spark" ? "glow-spark" : "glow-penny"} ${className}`}
-      style={{ width: px, height: px, transform: flip ? "scaleX(-1)" : undefined }}
+      className={`pixel shrink-0 ${who === "spark" ? "glow-spark" : "glow-penny"} ${active ? "glow-on" : ""} ${className}`}
+      style={{ width: px, height: px, transform: flip ? "scaleX(-1)" : undefined, ["--glow-r" as string]: `${4 + n * 3}px` }}
     />
   );
 }

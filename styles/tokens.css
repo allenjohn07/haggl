@@ -30,6 +30,11 @@
   /* Advisor identity marks (dots, names, thin borders), never big fills */
   --spark: #f2785c;
   --penny: #4cc3a8;
+  /* Their glow: lit from within. The speaking (or working) advisor glows brighter. */
+  --spark-glow: rgb(255 120 88 / 0.46);
+  --spark-glow-on: rgb(255 150 96 / 0.7);
+  --penny-glow: rgb(72 210 180 / 0.5);
+  --penny-glow-on: rgb(110 232 196 / 0.66);
 
   /* Status */
   --positive: #4cb782;       /* savings, "Live" */
