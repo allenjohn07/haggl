@@ -21,6 +21,8 @@ Two Claude agents (Anthropic API, default `claude-haiku-5-5`) play the advisors.
 
 The advisor's tool call creates a PayPal **Orders v2** order (intent `CAPTURE`, USD) in the **sandbox** for the store's fixed price, read from the server's stored offer, never from the browser. After you approve, the app captures the order once (the capture is idempotent) and shows the receipt.
 
+**Demo vs. production.** In this sandbox demo, our PayPal sandbox business account stands in for the store, so no real store gets an order and no real money moves. The app says so on the verdict and the receipt. In production the store stays the merchant of record: the advisor creates the PayPal order for that store through PayPal's agentic commerce services (Agent Ready for merchants, Store Sync for catalogs), you approve it, and the store is paid directly and ships the item. Stores that don't accept PayPal would get a plain "open at the store" link instead.
+
 ### How Channel3 is used
 
 Channel3's product search API (`/v1/search`) supplies the products, each store's offer and price, ratings and key features, and similar products for the price check.
