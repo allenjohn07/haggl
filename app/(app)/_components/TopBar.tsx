@@ -13,7 +13,13 @@ export function TopBar({
   home?: boolean; // the wordmark links to "/" (pages outside the main screen)
 }) {
   const shown = crumbs.filter(Boolean) as string[];
-  const mark = <span className="text-[14px] font-semibold tracking-[-0.02em] text-foreground">Haggl</span>;
+  const mark = (
+    <span className="flex shrink-0 items-center gap-2">
+      {/* eslint-disable-next-line @next/next/no-img-element -- a tiny static logo, no optimisation needed */}
+      <img src="/logo.png" alt="" width={17} height={20} className="h-5 w-auto" />
+      <span className="text-[14px] font-semibold tracking-[-0.02em] text-foreground">Haggl</span>
+    </span>
+  );
   return (
     <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background px-2 sm:px-4">
       {left}
