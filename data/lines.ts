@@ -171,6 +171,12 @@ export const LINES: Record<Advisor, Pools> & { errors: Record<"slow" | "failed" 
   },
 };
 
+// Both advisors' quick reaction when the user taps an answer (before the debate carries on).
+export const ACKS: Record<Advisor, string[]> = {
+  spark: ["Ooh, good to know!", "Love that. Noted!", "Okay, that helps me!", "Thank you! Ammo.", "Now we're talking.", "Ha! I knew it."],
+  penny: ["Noted.", "Thank you. Filed.", "Mm. That's useful.", "Good. Honest answer.", "That changes things.", "Writing that down."],
+};
+
 // A random line from the pool that isn't the same as the last one.
 export function pickLine(pool: string[], last?: string): string {
   if (pool.length < 2) return pool[0] ?? "";

@@ -85,16 +85,24 @@
   letter-spacing: -0.03em;
 }
 
-/* Pixel sprites: integer-scaled canvas, with a faint glow so they read as lit from within. */
+/* Pixel sprites: integer-scaled canvas, lit from within with a soft glow in their own colour.
+   --glow-r scales with the sprite (set by Pixel); .glow-on is the active speaker. */
 .pixel {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+  transition: filter 240ms ease-out;
 }
 .glow-spark {
-  filter: drop-shadow(0 0 6px rgb(242 120 92 / 0.22));
+  filter: drop-shadow(0 0 var(--glow-r, 10px) var(--spark-glow));
 }
 .glow-penny {
-  filter: drop-shadow(0 0 6px rgb(76 195 168 / 0.2));
+  filter: drop-shadow(0 0 var(--glow-r, 10px) var(--penny-glow));
+}
+.glow-spark.glow-on {
+  filter: drop-shadow(0 0 2px var(--spark-glow)) drop-shadow(0 0 calc(var(--glow-r, 10px) * 1.5) var(--spark-glow-on));
+}
+.glow-penny.glow-on {
+  filter: drop-shadow(0 0 2px var(--penny-glow)) drop-shadow(0 0 calc(var(--glow-r, 10px) * 1.5) var(--penny-glow-on));
 }
 
 .scroll-quiet {
@@ -120,11 +128,49 @@
 .anim-sink { animation: sink 150ms ease-out both; }
 .anim-fade { animation: fade 200ms ease-out both; }
 
+/* The face-off stage: bubbles crossfade (with a small lift), evidence slides up, speakers step forward. */
+@keyframes bubble-in {
+  from { transform: translateY(4px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes bubble-out {
+  from { opacity: 1; }
+  to { transform: translateY(-4px); opacity: 0; }
+}
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes slide-up {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.anim-bubble-in { animation: bubble-in 200ms var(--ease) both; }
+.anim-bubble-out { animation: bubble-out 160ms ease-out both; }
+.anim-slide-up { animation: slide-up 240ms var(--ease) both; }
+.stage-step { transition: transform 200ms var(--ease); }
+.stage-cols { transition: grid-template-columns 320ms var(--ease), max-width 320ms var(--ease); }
+
 @media (prefers-reduced-motion: reduce) {
   .anim-rise,
   .anim-sink,
   .anim-fade {
     animation: none;
+  }
+  /* Crossfades and state changes only: no stepping, lifting or sliding. */
+  .anim-bubble-in,
+  .anim-slide-up {
+    animation: fade 160ms ease-out both;
+  }
+  .anim-bubble-out {
+    animation: fade-out 160ms ease-out both;
+  }
+  .stage-cols {
+    transition: none;
+  }
+  .stage-step {
+    transition: none;
+    transform: none !important;
   }
   [data-slot="sheet-content"],
   [data-slot="sheet-overlay"] {

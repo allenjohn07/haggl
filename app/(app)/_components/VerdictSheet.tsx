@@ -118,7 +118,7 @@ export function VerdictSheet({ state, wide, onSkip }: { state: DebateState; wide
           <div className="flex h-12 shrink-0 items-center justify-between border-b border-border pr-2 pl-5">
             <span className="text-[13px] font-medium text-foreground">Verdict</span>
             <Button variant="ghost" onClick={() => setOpen(false)} className="h-11 gap-2 px-2.5 text-[13px] text-muted-foreground sm:h-8">
-              Read the chat
+              Back to the stage
               {wide && <Kbd className="border border-border bg-surface">Esc</Kbd>}
             </Button>
           </div>

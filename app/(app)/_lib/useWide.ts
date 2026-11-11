@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 
-// Wide screens get two chat screens side by side; phones get one thread.
+// Wide screens get the 4x stage with bubbles above each head; phones get a 3x stage with stacked bubbles.
 const QUERY = "(min-width: 900px)";
 
 function subscribe(cb: () => void) {

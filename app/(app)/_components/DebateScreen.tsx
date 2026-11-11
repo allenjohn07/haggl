@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
-import { ChevronLeftIcon } from "lucide-react";
-import type { Advisor, Offer, ProductCard } from "@/lib/types";
+import { useEffect, useState } from "react";
+import { ChevronLeftIcon, ListIcon } from "lucide-react";
+import type { Offer, ProductCard } from "@/lib/types";
 import { Pixel } from "@/components/pixel/Pixel";
 import { Speech } from "@/components/pixel/Speech";
 import { Button } from "@/components/ui/button";
@@ -11,10 +11,12 @@ import { useDebate, type DebateState } from "../_lib/useDebate";
 import { useWide } from "../_lib/useWide";
 import { money, store } from "../_lib/format";
 import { ProductImage } from "./ProductImage";
-import { Dot, NAME, ROLE } from "./ChatParts";
-import { Thread } from "./Thread";
+import { Stage } from "./Stage";
 import { Status, TopBar } from "./TopBar";
+import { Transcript } from "./Transcript";
 import { callLabel, VerdictSheet } from "./VerdictSheet";
+
+const MAX_TURNS = 8;
 
 function ProductBar({ product, picked }: { product: ProductCard; picked: Offer }) {
   return (
@@ -33,34 +35,31 @@ function ProductBar({ product, picked }: { product: ProductCard; picked: Offer }
   );
 }
 
-function PaneHeader({ who, state }: { who: Advisor; state: DebateState }) {
+// Under the stage: turn progress (a dot per message, in the speaker's colour) and the transcript button.
+function Footer({ state, onTranscript }: { state: DebateState; onTranscript: () => void }) {
+  const said = state.items.flatMap((it) => (it.kind === "message" ? [it.from] : []));
+  const label =
+    state.status === "verdict"
+      ? "Verdict ready"
+      : `Turn ${Math.min(MAX_TURNS, Math.max(1, said.length))} of ${MAX_TURNS}`;
+  const dot = (i: number) =>
+    said[i] === "spark" ? "bg-spark" : said[i] === "penny" ? "bg-penny" : i === said.length && state.status === "live" ? "bg-muted-foreground" : "bg-surface-3";
   return (
-    <div className="flex h-12 shrink-0 items-center gap-2.5 border-b border-border px-4">
-      <Pixel who={who} state={state.moods[who]} scale={1} />
-      <p className="min-w-0 flex-1 truncate text-[13px]">
-        <span className="font-medium text-foreground">{NAME[who]}</span>
-        <span className="text-muted-foreground"> · {ROLE[who]}</span>
-      </p>
-    </div>
-  );
-}
-
-function PhoneHeader({ state }: { state: DebateState }) {
-  return (
-    <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4">
-      {(["spark", "penny"] as const).map((who) => (
-        <div key={who} className={`flex items-center gap-2 ${who === "penny" ? "flex-row-reverse text-right" : ""}`}>
-          <Pixel who={who} state={state.moods[who]} scale={1} />
-          <div className="leading-tight">
-            <p className={`flex items-center gap-1.5 text-[13px] font-medium text-foreground ${who === "penny" ? "flex-row-reverse" : ""}`}>
-              <Dot who={who} />
-              {NAME[who]}
-            </p>
-            <p className="text-[11px] text-muted-foreground">{ROLE[who]}</p>
-          </div>
-        </div>
-      ))}
-    </div>
+    <footer className="flex h-14 shrink-0 items-center justify-between gap-3 border-t border-border px-4 sm:h-12 sm:px-5">
+      <div className="flex min-w-0 items-center gap-3">
+        <ol aria-hidden className="flex items-center gap-1">
+          {Array.from({ length: MAX_TURNS }, (_, i) => (
+            <li key={i} className={`size-1.5 rounded-full ${dot(i)}`} />
+          ))}
+        </ol>
+        <p className="truncate text-[12px] text-muted-foreground tabular-nums">{label}</p>
+      </div>
+      <Button variant="ghost" onClick={onTranscript} className="h-11 gap-2 px-3 text-[13px] text-muted-foreground sm:h-8 sm:px-2.5">
+        <ListIcon aria-hidden />
+        Transcript
+        {state.items.length > 0 && <span className="num text-[12px] text-faint">{state.items.length}</span>}
+      </Button>
+    </footer>
   );
 }
 
@@ -104,10 +103,11 @@ export function DebateScreen({
 }) {
   const { state, answer, retry } = useDebate(product.id, picked.offerId, { product, picked });
   const wide = useWide();
+  const [transcript, setTranscript] = useState(false);
   const trouble = state.status === "error" || state.status === "busy";
   const shownProduct = state.product ?? product;
 
-  // Esc goes back to the search on desktop, unless the verdict panel is open (Esc closes that first).
+  // Esc goes back to the search on desktop, unless a sheet is open (Esc closes that first).
   useEffect(() => {
     if (!wide) return;
     function onKey(e: KeyboardEvent) {
@@ -142,21 +142,15 @@ export function DebateScreen({
       <ProductBar product={shownProduct} picked={state.picked ?? picked} />
       {trouble ? (
         <Trouble state={state} onRetry={retry} onBack={onBack} />
-      ) : wide ? (
-        <div className="grid min-h-0 flex-1 grid-cols-2 divide-x divide-border">
-          {(["spark", "penny"] as const).map((who) => (
-            <section key={who} aria-label={`${NAME[who]}'s chat`} className="flex min-h-0 flex-col">
-              <PaneHeader who={who} state={state} />
-              <Thread state={state} owner={who} live={who === "spark"} onAnswer={answer} />
-            </section>
-          ))}
-        </div>
       ) : (
         <section aria-label="Spark and Penny" className="flex min-h-0 flex-1 flex-col">
-          <PhoneHeader state={state} />
-          <Thread state={state} owner={null} live onAnswer={answer} />
+          <Stage state={state} wide={wide} onAnswer={answer} />
+          <Footer state={state} onTranscript={() => setTranscript(true)} />
+          {/* Room for the verdict's reopen bar on phones, so the footer stays reachable. */}
+          {state.status === "verdict" && <div aria-hidden className="h-[68px] shrink-0 sm:hidden" />}
         </section>
       )}
+      <Transcript items={state.items} open={transcript} onOpenChange={setTranscript} wide={wide} />
       {state.status === "verdict" && state.verdict && (
         <VerdictSheet state={state} wide={wide} onSkip={() => onSkip(state.picked?.price ?? picked.price)} />
       )}

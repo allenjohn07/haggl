@@ -12,7 +12,7 @@ Shopping agents are coming, but "an AI that buys things for you" is hard to trus
 
 1. Opens the link and types what they're thinking of buying (or taps a suggestion).
 2. Picks a product and a store's price from real search results (Channel3). Prices are fixed by the stores.
-3. Watches **Spark** (treat yourself) and **Penny** (frugal skeptic) message each other. On a wide screen they're two chat screens side by side; on a phone, one thread.
+3. Watches **Spark** (treat yourself) and **Penny** (frugal skeptic) argue it out face to face on a small stage, in speech bubbles above their heads; the full history is in a transcript sheet.
 4. Instead of a typing indicator, the pixel character who's composing pops into the chat: "Shh, let me think", "Pulling prices from 5 stores", or a quick reaction to the other's point.
 5. Gets asked two quick questions mid-debate ("What's your budget?", "How often would you use it?") and taps an answer. The argument changes with it.
 6. Reads the verdict card: buy, buy it cheaper elsewhere, wait, or skip, with reasons and the best price found.
