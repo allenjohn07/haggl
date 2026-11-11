@@ -44,7 +44,11 @@ export async function runLookup(tool: LookupTool, s: State, from: Advisor): Prom
   if (tool === "find_alternatives") {
     let alts: Awaited<ReturnType<typeof findAlternatives>> = [];
     try {
-      alts = (await findAlternatives(product, 3)).filter((p) => p.id !== product.id && p.offers.length > 0);
+      // Under a quarter of the price is usually a part or an accessory (a $6 "air fryer"), not an alternative.
+      const floor = bestOffer(product).price * 0.25;
+      alts = (await findAlternatives(product, 8))
+        .filter((p) => p.id !== product.id && p.offers.length > 0 && bestOffer(p).price >= floor)
+        .slice(0, 3);
     } catch {
       console.warn("[debate] findAlternatives failed");
     }

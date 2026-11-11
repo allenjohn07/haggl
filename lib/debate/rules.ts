@@ -8,8 +8,9 @@ import type { Debate } from "./store";
 export const MAX_MESSAGES = 8;
 // After which message number an advisor asks the user, and who asks.
 export const ASK_AFTER: Record<number, Advisor> = { 2: "penny", 5: "spark" };
-export const TEXT_TARGET = "90 to 160"; // characters, what the prompt asks for
+export const TEXT_TARGET = "about 120 (90 to 160)"; // characters, what the prompt asks for
 export const TEXT_MAX = 200; // hard cap: one re-prompt, then trimmed at a sentence boundary
+export const TEXT_SOFT = 160; // over this, trailing sentences are dropped when a full thought remains
 export const REACTION_MAX = 60;
 export const QUESTION_MAX = 70;
 export const OPTION_MAX = 24;
@@ -119,8 +120,9 @@ export function mentionsAlternative(text: string, s: State): boolean {
     const price = bestOffer(p).price;
     if (amountsIn(text).some((n) => Math.abs(n - price) <= 1)) return true;
     if (p.brand && p.brand.length >= 3 && p.brand !== s.product.brand && t.includes(p.brand.toLowerCase())) return true;
-    const model = p.title.toLowerCase().split(/[^a-z0-9-]+/).filter((w) => w.length >= 3 && /\d/.test(w));
-    return model.some((w) => t.includes(w));
+    const words = p.title.toLowerCase().split(/[^a-z0-9-]+/).filter(Boolean);
+    if (words.length >= 3 && t.includes(words.slice(0, 3).join(" "))) return true; // "Runfalcon 5 Wide"
+    return words.filter((w) => w.length >= 3 && /\d/.test(w)).some((w) => t.includes(w)); // a model word like "q20i"
   });
 }
 
@@ -156,7 +158,7 @@ export function cleanAsk(input: unknown): { question: string; options: string[] 
 // The budget the user gave, if any ("Under $150" -> 150).
 export function budgetOf(s: State): number | undefined {
   for (const a of s.answers) {
-    if (!a.answer || !/budget|spend/i.test(a.question)) continue;
+    if (!a.answer || !/budget|spend|under|up to/i.test(`${a.question} ${a.answer}`)) continue; // live asks may put the budget in a chip
     const n = amountsIn(a.answer);
     if (n.length) return Math.max(...n);
   }
@@ -195,7 +197,9 @@ export function validateVerdict(input: unknown, s: State): Verdict | null {
   const price = priced(s, v.productId, v.offerId);
   if (!price) return null;
   const known = [...knownPrices(s), price.price, price.savings ?? 0];
-  const reasons = v.reasons.filter((r) => unbackedAmounts(r, known).length === 0).map((r) => trimSentences(r, REASON_MAX));
+  const backed = v.reasons.filter((r) => unbackedAmounts(r, known).length === 0);
+  const fits = backed.filter((r) => r.length <= REASON_MAX); // drop an over-long reason rather than cut it mid-thought
+  const reasons = fits.length >= 2 ? fits : backed.map((r) => trimSentences(r, REASON_MAX));
   if (reasons.length < 2 || unbackedAmounts(v.headline, known).length) return null;
   return { call: v.call, headline: trimSentences(v.headline, HEADLINE_MAX), reasons, productId: v.productId, offerId: v.offerId, ...price };
 }

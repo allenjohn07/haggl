@@ -26,8 +26,8 @@ function tool(name: string, description: string, properties: Record<string, unkn
 const str = (description: string) => ({ type: "string", description });
 
 const SAY = tool("say", "Send your message to the other advisor.", {
-  text: str(`Your message: ${TEXT_TARGET} characters, never more than ${TEXT_MAX}. One or two sentences.`),
-  reaction: str(`A punchy gut reaction (max ${REACTION_MAX} characters) to the other advisor's last message. Empty string on the very first message.`),
+  text: str(`Your message: ${TEXT_TARGET} characters, never more than ${TEXT_MAX}. At most 25 words, one or two sentences.`),
+  reaction: str(`A punchy gut reaction, 2 to 6 words (max ${REACTION_MAX} characters), to the other advisor's last message. Empty string on the very first message.`),
 });
 const LOOKUPS: Record<LookupTool, Anthropic.Tool> = {
   check_prices: tool("check_prices", "Pull this exact item's prices at every store that sells it.", {}),
@@ -134,7 +134,7 @@ export function liveSay(advisor: Advisor, s: State, fresh: Answer | undefined, s
 export function liveAsk(advisor: Advisor, s: State, topic: string, signal: AbortSignal, fix?: string) {
   const user = [
     facts(s),
-    `Pause the chat and ask the user one quick question about ${topic}. ` +
+    `Pause the chat and ask the user ONE quick question (not two in one) about ${topic}. ` +
       `Speak to the user directly, in your voice. The question is max ${QUESTION_MAX} characters. ` +
       `Give 2 to 4 answer options, each max ${OPTION_MAX} characters (two or three words, like "Every day" or "Under $100"). ` +
       "Only use dollar amounts that are in the facts above.",

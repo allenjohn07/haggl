@@ -3,7 +3,7 @@ import type { Advisor, Ask, Evidence, Offer, Product, ProductCard, Stage, Verdic
 import { liveAsk, liveSay, liveStep, liveVerdict, type Say } from "./agents";
 import { between, scriptedAsk, scriptedLookup, scriptedReaction, scriptedSay, sleep } from "./mock";
 import {
-  ASK_AFTER, MAX_MESSAGES, NAMES, OPTION_MAX, QUESTION_MAX, REACTION_MAX, TEXT_MAX, cleanAsk, dropSentencesWith, dropUnbacked, knownPrices,
+  ASK_AFTER, MAX_MESSAGES, NAMES, OPTION_MAX, QUESTION_MAX, REACTION_MAX, TEXT_MAX, TEXT_SOFT, cleanAsk, dropSentencesWith, dropUnbacked, knownPrices,
   mentionsAlternative, opener, overusedAmounts, ruleVerdict, trimSentences, unbackedAmounts, validateVerdict,
   type Answer, type Message, type State,
 } from "./rules";
@@ -69,14 +69,14 @@ async function* debateLoop(debate: Debate, product: Product, picked: Offer, { si
   }
 
   // What is wrong with a draft message, as instructions for one rewrite.
-  function problems(advisor: Advisor, n: number, say: Say, known: number[], altsFresh: boolean): string[] {
+  // `needsAlt`: Penny just found alternatives, or Spark is answering them, so the message must name one.
+  function problems(n: number, say: Say, known: number[], needsAlt: boolean): string[] {
     const out: string[] = [];
     const bad = unbackedAmounts(say.text, known);
     if (bad.length) out.push(`It mentions ${bad.map((b) => `$${b}`).join(", ")}, which is not in the facts. Use only prices from the facts.`);
-    if (say.text.trim().length > TEXT_MAX) out.push(`It is ${say.text.trim().length} characters. Keep it under 160, never over ${TEXT_MAX}.`);
+    if (say.text.trim().length > TEXT_MAX) out.push(`It is ${say.text.trim().length} characters. Keep it under ${TEXT_SOFT}, never over ${TEXT_MAX}.`);
     const worn = overusedAmounts(say.text, s);
     if (worn.length) out.push(`It repeats ${worn.map((b) => `$${b}`).join(", ")}, already said twice. Make a new point instead.`);
-    const needsAlt = (advisor === "penny" && altsFresh) || (advisor === "spark" && n === 5 && s.alternatives.length > 0);
     if (needsAlt && !mentionsAlternative(say.text, s)) out.push("It doesn't name the cheaper alternative Penny found. Mention it by name or price.");
     if (n > 1 && reactionIssue(say.reaction)) out.push(`The reaction must be max ${REACTION_MAX} characters and start with a word no earlier reaction started with (and not "Fair").`);
     return out;
@@ -141,17 +141,22 @@ async function* debateLoop(debate: Debate, product: Product, picked: Offer, { si
     // 3. The rules: no invented prices, max 200 characters, no price said a third time, Penny's
     // alternative named, fresh reactions. Re-prompt once with every problem, then fix in code.
     const known = knownPrices(s);
-    const issues = problems(advisor, n, say, known, altsFresh);
+    const needsAlt = altsFresh || (advisor === "spark" && n === 5 && s.alternatives.length > 0);
+    const issues = problems(n, say, known, needsAlt);
     if (issues.length && ai) {
       const fix = `Your draft was: "${say.text}" (reaction: "${say.reaction}"). Rewrite it. Problems:\n- ${issues.join("\n- ")}`;
       const retry = await liveSay(advisor, s, fresh, signal, fix);
       if (!retry) ai = false;
-      else if (problems(advisor, n, retry, known, altsFresh).length <= issues.length && !unbackedAmounts(retry.text, known).length) say = retry;
+      else if (problems(n, retry, known, needsAlt).length <= issues.length && !unbackedAmounts(retry.text, known).length) say = retry;
     }
     let text = say.text.replace(/\s+/g, " ").trim();
     if (unbackedAmounts(text, known).length) text = dropUnbacked(text, known);
     if (overusedAmounts(text, s).length) text = dropSentencesWith(text, (x) => overusedAmounts(x, s).length > 0) || text;
     text = trimSentences(text, TEXT_MAX);
+    // Over the 160 target: drop trailing sentences if a full thought of 100+ characters is left.
+    const tight = trimSentences(text, TEXT_SOFT);
+    const keepsAlt = !needsAlt || mentionsAlternative(tight, s);
+    if (text.length > TEXT_SOFT && tight.length >= 100 && !tight.endsWith("…") && keepsAlt) text = tight;
     if (!text) text = dropUnbacked(trimSentences(scriptedSay(advisor, s, fresh).text, TEXT_MAX), known) || "Hmm. Let me think about that one.";
 
     let reaction: string | undefined;
