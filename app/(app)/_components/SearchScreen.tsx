@@ -204,7 +204,7 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
 
   return (
     <>
-      <TopBar crumbs={["Search", lastQuery || undefined]} />
+      <TopBar crumbs={[]} />
       <main className={`flex flex-1 flex-col ${selected ? "pb-44 sm:pb-24" : "pb-10"}`}>
         {compact ? (
           <section className="flex flex-col gap-3 border-b border-border px-4 py-4 sm:px-6">
