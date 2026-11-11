@@ -74,16 +74,18 @@ Client only. After the verdict, **Skip** shows the advisors reacting (Penny chee
 
 `idle | think | lookup | talk | ask | pay | cheer | sulk`
 
-Driven only by real events (the line pools in `data/lines.ts` decide what is said, never when):
+Driven only by real events (the line pools in `data/lines.ts` decide what is said, never when). The debate is shown on a face-off stage: Spark left, Penny right, one speech bubble above each head (their current line only), evidence between or under them, ask options under the stage, and a Transcript sheet with the full history. Details in `docs/CHARACTERS.md`.
 
 | Event | Spark | Penny |
 |---|---|---|
 | picking a product | idle | idle |
 | `stage: search` | lookup | idle |
-| `stage: think` (advisor X) | X: **think**, pops into the chat in place of a typing indicator | other: idle |
-| `stage: lookup` (advisor X) | X: **lookup**, says the server's label | other: idle |
-| `message` from X | X: **talk**, shows `reaction`, then the message bubble lands | other: idle |
-| `ask` from X | X: **ask** | other: idle |
+| `stage: think` (advisor X) | X: **think**, their bubble shows a muted pop-in line in place of a typing indicator | other: idle, their last message stays up |
+| `stage: lookup` (advisor X) | X: **lookup**, their bubble shows the server's label | other: idle |
+| `message` from X | X: **talk** (steps forward), `reaction` shows as a small muted bubble, then the message replaces it | other: idle |
+| `evidence` | the card slides in on the stage and stays until the next evidence or the verdict | |
+| `ask` from X | X: **ask**, the question in their bubble, options under the stage | other: idle, bubble cleared |
+| user answers | both react with a short line; a "You: …" chip shows the answer | |
 | `stage: verdict` | think | think |
 | `verdict` buy | cheer | cheer |
 | `verdict` buy_elsewhere | cheer | cheer |
@@ -111,7 +113,7 @@ One shared file, `styles/tokens.css`, owned by the `ui` lane; `app/globals.css` 
 
 - **Look:** Linear-style. Near-black background `#08090a`, surfaces barely lifted (`#0f1011`, `#141516`), hairline borders (white at 5 to 10% alpha), small radii (6 to 8px), mostly greys. Secondary text `#8a8f98`.
 - **One brand accent:** indigo `#5e6ad2` for primary actions, selection and focus rings. Green `#4cb782` only for status ("Live", savings).
-- **Advisor accents are small identity marks:** Spark coral `#f2785c`, Penny teal `#4cc3a8`, used as a dot, a name, or a thin left border on their own messages. Never big filled bubbles.
+- **Advisor accents are small identity marks:** Spark coral `#f2785c`, Penny teal `#4cc3a8`, used as a dot or a name, and as the soft glow and floor spotlight around their own sprite. Never big filled bubbles.
 - **Type:** Inter (variable, with the optical-size axis) for everything, 13 to 14px body at -0.01em, headings semibold at -0.02em and modest sizes. Geist Mono, small and tabular (`.num`), for prices. No other fonts.
 - **Components:** shadcn/ui (`components/ui/*`, Radix base, `cn` from `lib/utils.ts`): button, input, badge, separator, sheet (the verdict: right panel on desktop, bottom sheet on phones), kbd.
 - **Motion:** 150 to 200ms ease-out, opacity and translate only; off for `prefers-reduced-motion`. No gradients as decoration, glassmorphism, big shadows or glow buttons. The PayPal button keeps PayPal's yellow with the wordmark set in text.

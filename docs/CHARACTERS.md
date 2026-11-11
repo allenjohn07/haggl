@@ -1,14 +1,25 @@
 # CHARACTERS: the pixel advisors
 
-The signature feature: **wherever a chat app would show a typing indicator or a spinner, the pixel character who is working pops into the chat and says something instead.** Characters are original. Do not use any existing franchise character, and do not reuse anything from earlier prototypes.
+The signature feature: **the debate is a face-off, not a chat log.** Spark and Penny stand facing each other on a stage and talk in speech bubbles; wherever an app would show a typing indicator or a spinner, the character who is working says something instead. Characters are original. Do not use any existing franchise character, and do not reuse anything from earlier prototypes.
 
 ## Art direction
 
-- **Dark and calm.** The characters live on a near-black interface, so they are lit from within: bright, saturated bodies with a faint glow (kept subtle so it sits in the calm, Linear-style UI), no heavy black outlines.
+- **Dark and calm.** The characters live on a near-black interface, so they are lit from within: bright, saturated bodies with a soft, clearly visible glow in their own colour (Spark warm coral/gold, Penny teal/mint; `--spark-glow`, `--penny-glow` in `styles/tokens.css`). The advisor who is speaking or working glows brighter (`.glow-on`). The glow radius scales with the sprite. No heavy black outlines.
 - **Hand-drawn pixel maps,** not procedural shapes: each frame is a small string grid (about 24x24) mapping characters to palette colours, drawn to a small canvas and scaled by an **integer** with `image-rendering: pixelated`. Frames cached per character, state and frame.
-- **They move into the chat.** A character slides up into the conversation where a typing indicator would be, does its thing, and slides out when the message lands. On the side-by-side layout it appears on the sender's own screen; the other screen shows a quiet row with the 1x sprite ("Spark is replying in his chat").
-- **Speech is HTML** in the UI font (Inter), not handwriting: a small muted chip next to the sprite with the advisor's name in their accent colour. It stays crisp and accessible (a live region carries the latest line).
-- **Reduced motion:** no sliding or bouncing; characters still appear, change state and speak.
+
+## The face-off stage (`app/(app)/_components/Stage.tsx`)
+
+- **Layout.** Spark on the left and Penny on the right, in the middle of the screen, 4x on desktop and 3x on phones, on a hairline floor with a soft spotlight in each one's colour. No chat panes and no scrolling message list.
+- **One bubble each.** When an advisor speaks, a bubble appears above their head (surface colour, hairline border, a small tail toward the speaker, Inter 15px, max 36ch) and they step forward a little in `talk`. Each advisor shows only their current line, so the screen holds the current line and the reply. A new line crossfades over the old one. On phones the bubbles stack above both characters (newest nearest them) and the older one is clamped to three lines.
+- **Working, not typing.** On `think` or `lookup` the working advisor's bubble shows its pop-in line (`LINES[advisor].think`, or the server's lookup label) in a small muted style. The other stays idle, and keeps the point being answered on screen.
+- **Reactions.** A message's `reaction` shows first as a small muted bubble over the speaker, then their message replaces it.
+- **Evidence** (price check, alternatives, a closer look) slides in on the floor between them (under them on phones) as the compact table, and stays until the next evidence or the verdict.
+- **Asks.** The asker goes to `ask` with the question in their bubble; the options are outline buttons pinned under the stage. A tap shows a "You: …" chip and both advisors react with a line from `ACKS` in `data/lines.ts`.
+- **Footer:** 8 turn dots in the speakers' colours, "Turn n of 8", and a **Transcript** sheet (right on desktop, bottom on phones) with the full history: messages with their reactions, evidence, asks and answers.
+- **Verdict:** the Verdict sheet opens over the stage; behind it both advisors stand in their verdict states with a cheer/sulk line.
+- **Pacing.** Events are applied in order and each is held long enough to read (about 30 ms a character for a message, capped), since only one line per advisor is visible. States still follow the real event order.
+- **Speech is HTML** in the UI font (Inter), not baked into the canvas. A polite live region carries the latest message or question.
+- **Reduced motion:** no stepping, lifting or sliding; bubbles and cards crossfade and characters still change state and speak.
 
 ## Cast
 
