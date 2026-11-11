@@ -52,11 +52,14 @@ async function createOrder(purchaseId: string): Promise<{ orderId: string; appro
           paypal: {
             experience_context: {
               brand_name: "Haggl",
+              // Open on PayPal's login page (not the guest card form) in US English, so the sandbox buyer logs straight in.
+              landing_page: "LOGIN",
+              locale: "en-US",
               user_action: "PAY_NOW",
               shipping_preference: "NO_SHIPPING",
               // PayPal appends ?token=<orderId>&PayerID=... to the return URL.
               return_url: appUrl(`/api/capture?purchaseId=${encodeURIComponent(purchaseId)}`),
-              cancel_url: appUrl(`/purchase/${encodeURIComponent(purchaseId)}?status=cancelled`),
+              cancel_url: appUrl(`/receipt/${encodeURIComponent(purchaseId)}?status=cancelled`),
             },
           },
         },
