@@ -5,6 +5,7 @@ import type { ProductCard } from "@/lib/types";
 import { DebateScreen } from "./DebateScreen";
 import { SearchScreen } from "./SearchScreen";
 import { SkipScreen } from "./SkipScreen";
+import { unlockSound } from "../_lib/sounds";
 
 type Screen = { name: "search" } | { name: "debate"; card: ProductCard; run: number } | { name: "skip"; kept: number };
 
@@ -20,7 +21,12 @@ export function Haggl() {
   return (
     <>
       <div className={screen.name === "search" ? "flex flex-1 flex-col" : "hidden"}>
-        <SearchScreen onAsk={(card) => setScreen({ name: "debate", card, run: Date.now() })} />
+        <SearchScreen
+          onAsk={(card) => {
+            unlockSound(); // the Ask tap is the user gesture browsers need before playing sound
+            setScreen({ name: "debate", card, run: Date.now() });
+          }}
+        />
       </div>
       {screen.name === "debate" && (
         <DebateScreen

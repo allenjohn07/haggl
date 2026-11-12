@@ -15,6 +15,7 @@ import type { ChatItem, DebateState } from "../_lib/useDebate";
 import { api } from "../_lib/api";
 import { money, store } from "../_lib/format";
 import { PayPalButton } from "./PayPalButton";
+import { VerdictCompare } from "./VerdictCompare";
 
 type Target = { productId: string; offerId: string };
 
@@ -65,6 +66,8 @@ export function VerdictSheet({ state, wide, onSkip }: { state: DebateState; wide
   const { merchant, title } = describe(v, product, picked, state.items);
   const differs = v.productId !== product.id || v.offerId !== picked.offerId;
   const positive = v.call === "buy" || v.call === "buy_elsewhere";
+  const compare = v.options?.length ? v.options : null;
+  const sheetWide = (compare?.length ?? 0) > 1;
 
   async function buy(target: Target) {
     setLastTarget(target);
@@ -112,7 +115,7 @@ export function VerdictSheet({ state, wide, onSkip }: { state: DebateState; wide
           side={wide ? "right" : "bottom"}
           showCloseButton={false}
           className={`gap-0 border-border bg-surface-2 p-0 shadow-[0_0_0_1px_rgb(0_0_0/0.2),0_16px_48px_rgb(0_0_0/0.45)] ${
-            wide ? "w-[420px] sm:max-w-[420px]" : "max-h-[90dvh] rounded-t-lg"
+            wide ? (sheetWide ? "data-[side=right]:w-[600px] data-[side=right]:sm:max-w-[600px]" : "data-[side=right]:w-[440px] data-[side=right]:sm:max-w-[440px]") : "max-h-[90dvh] rounded-t-lg"
           }`}
         >
           <div className="flex h-12 shrink-0 items-center justify-between border-b border-border pr-2 pl-5">
@@ -138,26 +141,36 @@ export function VerdictSheet({ state, wide, onSkip }: { state: DebateState; wide
                   {callLabel(v, merchant)}
                 </Badge>
               </Prop>
-              <Prop label="Item">
-                <span className="line-clamp-2">{title}</span>
-              </Prop>
-              <Prop label="Store">{merchant ?? "Best price found"}</Prop>
-              <Prop label="Best price">
-                <span className="num">{money(v.price)}</span>
-              </Prop>
+              {!compare && (
+                <>
+                  <Prop label="Item">
+                    <span className="line-clamp-2">{title}</span>
+                  </Prop>
+                  <Prop label="Store">{merchant ?? "Best price found"}</Prop>
+                  <Prop label="Best price">
+                    <span className="num">{money(v.price)}</span>
+                  </Prop>
+                </>
+              )}
               {v.savings ? (
                 <Prop label="Saves">
                   <span className="num text-positive">{money(v.savings)}</span>
                   <span className="text-muted-foreground"> vs your pick</span>
                 </Prop>
               ) : null}
-              {differs && (
+              {differs && !compare && (
                 <Prop label="Your pick">
                   <span className="num text-muted-foreground">{money(picked.price)}</span>
                   <span className="text-muted-foreground"> at {store(picked.merchant)}</span>
                 </Prop>
               )}
             </dl>
+            {compare && (
+              <div className="mt-5">
+                <h3 className="mb-2 text-[12px] font-medium text-muted-foreground">{compare.length > 1 ? "Compare" : "The product"}</h3>
+                <VerdictCompare options={compare} />
+              </div>
+            )}
 
             <Separator className="my-5" />
             <h3 className="text-[12px] font-medium tracking-normal text-muted-foreground">Why</h3>

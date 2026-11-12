@@ -1,5 +1,5 @@
-import { toCard } from "@/lib/products";
-import type { Advisor, Ask, Evidence, Offer, Product, ProductCard, Stage, Verdict } from "@/lib/types";
+import { getOffer, getProduct, toCard } from "@/lib/products";
+import type { Advisor, Ask, Evidence, Offer, Product, ProductCard, Stage, Verdict, VerdictOption } from "@/lib/types";
 import { liveAsk, liveSay, liveStep, liveVerdict, type Say } from "./agents";
 import { between, scriptedAsk, scriptedLookup, scriptedReaction, scriptedSay, sleep } from "./mock";
 import {
@@ -239,6 +239,25 @@ async function* debateLoop(debate: Debate, product: Product, picked: Offer, { si
   const verdict = validateVerdict(raw, s) ?? ruleVerdict(s);
   await padFrom(t0, 1500, 2500);
   if (signal.aborted) return;
+  verdict.options = compareOptions(verdict, product, picked);
   debate.verdict = verdict;
   yield { event: "verdict", data: verdict };
+}
+
+// The comparison the user decides from: the verdict's pick, then the original pick if it differs.
+// Everything comes from the stored products and offers, never from the model.
+function compareOptions(v: Verdict, product: Product, picked: Offer): VerdictOption[] {
+  const option = (productId: string, offerId: string): VerdictOption | undefined => {
+    const p = getProduct(productId);
+    const o = getOffer(productId, offerId);
+    if (!p || !o) return undefined;
+    return {
+      productId, offerId, title: p.title, brand: p.brand, image: p.image, rating: p.rating,
+      merchant: o.merchant, price: o.price, compareAtPrice: o.compareAtPrice, url: o.url, inStock: o.inStock,
+      recommended: productId === v.productId && offerId === v.offerId,
+      picked: productId === product.id && offerId === picked.offerId,
+    };
+  };
+  const out = [option(v.productId, v.offerId), option(product.id, picked.offerId)].filter((x): x is VerdictOption => !!x);
+  return out.filter((o, i) => out.findIndex((x) => x.productId === o.productId && x.offerId === o.offerId) === i);
 }

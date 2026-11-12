@@ -49,7 +49,7 @@ Request `{ productId: string, offerId: string }` (the user's pick; must exist in
 | `evidence` | `Evidence & { id }` | A tool call returned prices, alternatives or details |
 | `ask` | `Ask` | An advisor asks the user. Followed by `stage: waiting_user` |
 | `answer` | `{ askId, answer: string \| null }` | The server received an answer (or `null` after the 90 s timeout) |
-| `verdict` | `Verdict` | The joint verdict. The debate is over |
+| `verdict` | `Verdict` | The joint verdict. The debate is over. `options` carries the comparison (recommended offer first, then the original pick if different), built by the server from stored offers, with each store's product `url` for "View at store" |
 | `error` | `{ message }` | Only for unrecoverable problems. The UI shows an in-character screen |
 | `done` | `{}` | Stream complete |
 
@@ -118,3 +118,9 @@ One shared file, `styles/tokens.css`, owned by the `ui` lane; `app/globals.css` 
 - **Type:** Inter (variable, with the optical-size axis) for everything, 13 to 14px body at -0.01em, headings semibold at -0.02em and modest sizes. Geist Mono, small and tabular (`.num`), for prices. No other fonts.
 - **Components:** shadcn/ui (`components/ui/*`, Radix base, `cn` from `lib/utils.ts`): button, input, badge, separator, sheet (the verdict: right panel on desktop, bottom sheet on phones), kbd.
 - **Motion:** 150 to 200ms ease-out, opacity and translate only; off for `prefers-reduced-motion`. No gradients as decoration, glassmorphism, big shadows or glow buttons. The PayPal button keeps PayPal's yellow with the wordmark set in text.
+
+## Search typeahead, store links and sounds (UI only)
+
+- **Typeahead:** the search box suggests common searches as you type, from the local list in `data/typeahead.ts` (no API call per keystroke). Picking one runs a normal `/api/search`.
+- **"View at store":** the pick bar, the debate's product header and each verdict option link to the store's own product page (`Offer.url`), in a new tab.
+- **Sounds:** `app/(app)/_lib/sounds.ts` plays small synthesized sounds (`@web-kits/audio`, MIT, no audio files): a soft pop when an advisor's line lands (Spark a little higher, from the left; Penny lower, from the right), a two-note chime on an ask, and a short chord on the verdict. A mute toggle sits in the debate's top bar and is remembered in `localStorage` (`haggl:sound`).
