@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       return Response.json({ products: [toCard(product)], fromLink: true });
     }
     const products = await searchProducts(query);
-    return Response.json({ products: products.slice(0, 8).map(toCard) });
+    return Response.json({ products: products.slice(0, 24).map(toCard) });
   } catch {
     return Response.json({ error: "The shelves are empty right now. Try again?" }, { status: 502 });
   }
