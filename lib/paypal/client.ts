@@ -116,7 +116,13 @@ export function describeError(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
+// The app's public address, for PayPal's return and cancel links. Uses APP_URL; on Render, if APP_URL is
+// missing or still points at localhost, falls back to RENDER_EXTERNAL_URL (set by Render for every web
+// service), so a buyer is never sent to localhost after paying.
 export function appUrl(path: string): string {
-  const base = (process.env.APP_URL || "http://localhost:3000").replace(/\/+$/, "");
+  const configured = process.env.APP_URL?.trim();
+  const render = process.env.RENDER_EXTERNAL_URL?.trim();
+  const isLocal = !configured || /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(configured);
+  const base = (isLocal && render ? render : configured || "http://localhost:3000").replace(/\/+$/, "");
   return `${base}${path}`;
 }
