@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CheckIcon, SearchIcon, StarIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 import type { ProductCard } from "@/lib/types";
 import { Pixel } from "@/components/pixel/Pixel";
 import type { PixelState } from "@/components/pixel/sprites";
@@ -15,62 +15,11 @@ import { suggest } from "@/data/typeahead";
 import { api } from "../_lib/api";
 import { money, store } from "../_lib/format";
 import { ProductImage } from "./ProductImage";
+import { ProductTile } from "./ProductTile";
 import { TopBar } from "./TopBar";
 import { StoreLink } from "./StoreLink";
 
 type Status = "idle" | "searching" | "done" | "empty" | "failed" | "busy";
-
-// Product · rating · stores · best price. Phones fold rating and stores under the title.
-const COLS = "grid grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-x-3 sm:grid-cols-[2.5rem_minmax(0,1fr)_7rem_5rem_6.5rem]";
-
-function Rating({ score, count }: { score: number; count: number }) {
-  return (
-    <span className="inline-flex items-center gap-1 text-muted-foreground">
-      <StarIcon aria-hidden className="size-3 fill-current" />
-      <span className="text-[12px] text-text-2 tabular-nums">{score.toFixed(1)}</span>
-      <span className="text-[12px] tabular-nums">({count.toLocaleString("en-US")})</span>
-      <span className="sr-only"> stars</span>
-    </span>
-  );
-}
-
-function ResultRow({ card, selected, onPick }: { card: ProductCard; selected: boolean; onPick: () => void }) {
-  const stores = `${card.offerCount} ${card.offerCount === 1 ? "store" : "stores"}`;
-  return (
-    <li>
-      <button
-        type="button"
-        onClick={onPick}
-        aria-pressed={selected}
-        className={`${COLS} relative w-full px-4 py-2.5 text-left transition-colors duration-150 sm:px-6 sm:py-2 ${
-          selected ? "bg-primary/10" : "hover:bg-accent"
-        } focus-visible:bg-accent focus-visible:outline-none`}
-      >
-        {selected && <span aria-hidden className="absolute inset-y-0 left-0 w-0.5 bg-primary" />}
-        <ProductImage src={card.image} alt={card.title} brand={card.brand} className="size-12 sm:size-10" />
-        <span className="min-w-0">
-          <span className="line-clamp-2 text-[14px] leading-snug text-foreground sm:line-clamp-1 sm:text-[13px]">{card.title}</span>
-          <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12px] text-muted-foreground">
-            {card.brand && <span>{card.brand}</span>}
-            <span className="flex items-center gap-2 sm:hidden">
-              {card.rating && <Rating score={card.rating.score} count={card.rating.count} />}
-              <span>{stores}</span>
-            </span>
-          </span>
-        </span>
-        <span className="hidden sm:block">{card.rating && <Rating score={card.rating.score} count={card.rating.count} />}</span>
-        <span className="hidden text-[12px] text-muted-foreground sm:block">{stores}</span>
-        <span className="flex items-center justify-end gap-2">
-          <span className="text-right">
-            <span className="num block text-[13px] text-foreground">{money(card.bestOffer.price)}</span>
-            <span className="block text-[11px] text-muted-foreground sm:hidden">{store(card.bestOffer.merchant)}</span>
-          </span>
-          {selected && <CheckIcon aria-hidden className="size-3.5 text-primary" />}
-        </span>
-      </button>
-    </li>
-  );
-}
 
 // A suggestion with the typed part in full colour and the rest muted.
 function Match({ text, query }: { text: string; query: string }) {
@@ -314,17 +263,12 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
 
         {results.length > 0 && (
           <section aria-label="Results" className={`transition-opacity duration-150 ${status === "searching" ? "opacity-40" : ""}`}>
-            <div className={`${COLS} border-b border-border px-4 py-2 text-[12px] text-muted-foreground sm:px-6`}>
-              <span className="col-span-2">
-                {results.length} {results.length === 1 ? "result" : "results"}
-              </span>
-              <span className="hidden sm:block">Rating</span>
-              <span className="hidden sm:block">Stores</span>
-              <span className="text-right">Best price</span>
-            </div>
-            <ul className="divide-y divide-border-soft border-b border-border-soft">
+            <p className="px-4 pt-4 pb-3 text-[12px] text-muted-foreground sm:px-6">
+              {results.length} {results.length === 1 ? "result" : "results"} · best price across stores
+            </p>
+            <ul className="grid grid-cols-2 gap-3 px-4 pb-4 sm:grid-cols-3 sm:px-6 lg:grid-cols-4 xl:grid-cols-5">
               {results.map((c) => (
-                <ResultRow key={c.id} card={c} selected={selected?.id === c.id} onPick={() => setSelected(c)} />
+                <ProductTile key={c.id} card={c} selected={selected?.id === c.id} onPick={() => setSelected(c)} />
               ))}
             </ul>
           </section>
