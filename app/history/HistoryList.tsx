@@ -32,7 +32,7 @@ export function HistoryList() {
         </div>
         <h1 className="text-[20px] font-semibold tracking-[-0.02em] text-foreground">No debates yet</h1>
         <p className="text-[14px] text-muted-foreground">Your verdicts, purchases and transcripts will show up here. They&apos;re kept in this browser only.</p>
-        <Link href="/" className={cn(buttonVariants(), "h-11 sm:h-9")} onClick={() => sounds.tap()}>
+        <Link href="/app" className={cn(buttonVariants(), "h-11 sm:h-9")} onClick={() => sounds.tap()}>
           Ask about something
         </Link>
       </div>

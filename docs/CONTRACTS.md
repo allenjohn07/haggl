@@ -119,6 +119,10 @@ One shared file, `styles/tokens.css`, owned by the `ui` lane; `app/globals.css` 
 - **Components:** shadcn/ui (`components/ui/*`, Radix base, `cn` from `lib/utils.ts`): button, input, badge, separator, sheet (the verdict: right panel on desktop, bottom sheet on phones), kbd.
 - **Motion:** 150 to 200ms ease-out, opacity and translate only; off for `prefers-reduced-motion`. No gradients as decoration, glassmorphism, big shadows or glow buttons. The PayPal button keeps PayPal's yellow with the wordmark set in text.
 
+## Routes (pages)
+
+`/` is the landing page (hero with a looping mini-debate, how it works, trust points). `/app` is the app (search, debate, verdict). `/history`, `/receipt/<id>`. Links that start something new go to `/app`; the wordmark goes to `/`.
+
 ## Search typeahead, store links and sounds (UI only)
 
 - **Typeahead:** the search box suggests common searches as you type, from the local list in `data/typeahead.ts` (no API call per keystroke). Picking one runs a normal `/api/search`.

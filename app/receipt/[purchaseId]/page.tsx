@@ -40,7 +40,7 @@ function Shell() {
 function Again({ primary = false }: { primary?: boolean }) {
   return (
     <Button asChild variant={primary ? "default" : "ghost"} className={`h-11 px-4 sm:h-9 ${primary ? "" : "text-muted-foreground"}`}>
-      <Link href="/">Check something else</Link>
+      <Link href="/app">Check something else</Link>
     </Button>
   );
 }

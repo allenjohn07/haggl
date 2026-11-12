@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const purchaseId = params.get("purchaseId") ?? "";
   const token = params.get("token") ?? "";
-  if (!purchaseId) return Response.redirect(appUrl("/"), 303);
+  if (!purchaseId) return Response.redirect(appUrl("/app"), 303);
 
   const page = `/receipt/${encodeURIComponent(purchaseId)}`;
   const result = await capturePurchase(purchaseId, token);
