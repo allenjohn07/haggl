@@ -14,6 +14,7 @@ import { ProductImage } from "./ProductImage";
 import { Stage } from "./Stage";
 import { Status, TopBar } from "./TopBar";
 import { SoundToggle } from "./SoundToggle";
+import { sounds } from "../_lib/sounds";
 import { StoreLink } from "./StoreLink";
 import { Transcript } from "./Transcript";
 import { callLabel, VerdictSheet } from "./VerdictSheet";
@@ -91,7 +92,13 @@ function Trouble({ state, onRetry, onBack }: { state: DebateState; onRetry: () =
           </Speech>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={onRetry} className="h-11 px-4 sm:h-9">
+          <Button
+            onClick={() => {
+              sounds.tap();
+              onRetry();
+            }}
+            className="h-11 px-4 sm:h-9"
+          >
             Try again
           </Button>
           <Button variant="outline" onClick={onBack} className="h-11 px-4 sm:h-9">
@@ -144,7 +151,13 @@ export function DebateScreen({
     <div className="flex h-dvh flex-col">
       <TopBar
         left={
-          <Button variant="ghost" onClick={onBack} aria-label="Back to search" className="h-11 gap-1.5 px-2 text-muted-foreground sm:h-8">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              sounds.tap();
+              onBack();
+            }}
+            aria-label="Back to search" className="h-11 gap-1.5 px-2 text-muted-foreground sm:h-8">
             <ChevronLeftIcon aria-hidden />
             {wide && <Kbd className="border border-border bg-surface-2">Esc</Kbd>}
           </Button>
@@ -163,12 +176,18 @@ export function DebateScreen({
       ) : (
         <section aria-label="Spark and Penny" className="flex min-h-0 flex-1 flex-col">
           <Stage state={state} wide={wide} onAnswer={answer} />
-          <Footer state={state} onTranscript={() => setTranscript(true)} />
+          <Footer state={state} onTranscript={() => {
+              sounds.open();
+              setTranscript(true);
+            }} />
           {/* Room for the verdict's reopen bar on phones, so the footer stays reachable. */}
           {state.status === "verdict" && <div aria-hidden className="h-[68px] shrink-0 sm:hidden" />}
         </section>
       )}
-      <Transcript items={state.items} open={transcript} onOpenChange={setTranscript} wide={wide} />
+      <Transcript items={state.items} open={transcript} onOpenChange={(o) => {
+          if (!o) sounds.close();
+          setTranscript(o);
+        }} wide={wide} />
       {state.status === "verdict" && state.verdict && (
         <VerdictSheet state={state} wide={wide} onSkip={() => onSkip(state.picked?.price ?? picked.price)} />
       )}
