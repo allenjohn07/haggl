@@ -53,7 +53,7 @@ describe("createOrderForPurchase", () => {
     expect(approveUrl).toBe("https://sandbox.paypal.com/approve");
 
     const create = calls.find((c) => c.url.endsWith("/v2/checkout/orders"))!;
-    expect(create.url.startsWith("https://api-m.sandbox.paypal.com")).toBe(true);
+    expect(new URL(create.url).origin).toBe("https://api-m.sandbox.paypal.com");
     const body = JSON.parse(create.body!);
     expect(body.intent).toBe("CAPTURE");
     expect(body.purchase_units[0].amount).toEqual({ currency_code: "USD", value: "129.00" });
