@@ -14,6 +14,7 @@ import { ProductImage } from "./ProductImage";
 import { Stage } from "./Stage";
 import { Status, TopBar } from "./TopBar";
 import { SoundToggle } from "./SoundToggle";
+import { saveDebate, setOutcome } from "../_lib/history";
 import { sounds } from "../_lib/sounds";
 import { StoreLink } from "./StoreLink";
 import { Transcript } from "./Transcript";
@@ -129,6 +130,14 @@ export function DebateScreen({
   const trouble = state.status === "error" || state.status === "busy";
   const shownProduct = state.product ?? product;
 
+  // Save the finished debate (verdict and transcript) to this browser's history.
+  const { status: phase, verdict, debateId, items } = state;
+  const shownPicked = state.picked ?? picked;
+  useEffect(() => {
+    if (phase !== "verdict" || !verdict || !debateId) return;
+    saveDebate({ debateId, at: Date.now(), product: shownProduct, picked: shownPicked, compare, verdict, items });
+  }, [phase, verdict, debateId, items, shownProduct, shownPicked, compare]);
+
   // Esc goes back to the search on desktop, unless a sheet is open (Esc closes that first).
   useEffect(() => {
     if (!wide) return;
@@ -191,7 +200,14 @@ export function DebateScreen({
           setTranscript(o);
         }} wide={wide} />
       {state.status === "verdict" && state.verdict && (
-        <VerdictSheet state={state} wide={wide} onSkip={() => onSkip(state.picked?.price ?? picked.price)} />
+        <VerdictSheet
+          state={state}
+          wide={wide}
+          onSkip={() => {
+            if (state.debateId) setOutcome(state.debateId, { kind: "skipped" });
+            onSkip(state.picked?.price ?? picked.price);
+          }}
+        />
       )}
     </div>
   );

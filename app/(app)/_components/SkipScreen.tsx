@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button";
 import { LINES, pickLine } from "@/data/lines";
 import { money } from "../_lib/format";
 import { TopBar } from "./TopBar";
+import { HistoryLink } from "./HistoryNav";
 
 // User tapped Skip: Penny cheers, Spark sulks, and the money that stayed put.
 export function SkipScreen({ kept, onAgain }: { kept: number; onAgain: () => void }) {
   const [lines] = useState(() => ({ spark: pickLine(LINES.spark.sulk), penny: pickLine(LINES.penny.cheer) }));
   return (
     <>
-      <TopBar crumbs={["Skipped"]} />
+      <TopBar crumbs={["Skipped"]} right={<HistoryLink />} />
       <main className="anim-fade flex flex-1 items-start justify-center px-4 pt-[12vh]">
         <div className="flex w-full max-w-md flex-col gap-5">
           <div className="flex items-end gap-2">
