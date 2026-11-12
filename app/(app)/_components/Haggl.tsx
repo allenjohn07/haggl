@@ -7,7 +7,7 @@ import { SearchScreen } from "./SearchScreen";
 import { SkipScreen } from "./SkipScreen";
 import { sounds, unlockSound } from "../_lib/sounds";
 
-type Screen = { name: "search" } | { name: "debate"; card: ProductCard; compare?: ProductCard; run: number } | { name: "skip"; kept: number };
+type Screen = { name: "search" } | { name: "debate"; card: ProductCard; compare?: ProductCard[]; run: number } | { name: "skip"; kept: number };
 
 // One route, three screens: search and pick, the debate (with the verdict), and the skip reaction.
 // The search screen stays mounted (hidden) so going back keeps the results.

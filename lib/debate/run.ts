@@ -28,7 +28,7 @@ export type DebateEvent =
 export const ANSWER_TIMEOUT_MS = 90_000;
 const PING_MS = 15_000;
 
-type Options = { signal: AbortSignal; pace?: number; compare?: Product }; // pace 0 = no delays (scripts); compare = a product from a link the user pasted
+type Options = { signal: AbortSignal; pace?: number; compare?: Product[] }; // pace 0 = no delays (scripts); compare = up to 2 products the user added (from results or a link) //asted
 
 export async function* runDebate(debate: Debate, product: Product, picked: Offer, opts: Options): AsyncGenerator<DebateEvent> {
   try {
@@ -42,7 +42,7 @@ export async function* runDebate(debate: Debate, product: Product, picked: Offer
   yield { event: "done", data: {} };
 }
 
-async function* debateLoop(debate: Debate, product: Product, picked: Offer, { signal, pace = 1, compare }: Options): AsyncGenerator<DebateEvent> {
+async function* debateLoop(debate: Debate, product: Product, picked: Offer, { signal, pace = 1, compare = [] }: Options): AsyncGenerator<DebateEvent> {
   const s: State = {
     debate, product, picked, evidence: [], messages: [], answers: [], alternatives: [],
     used: { check_prices: false, find_alternatives: false, look_closer: false },
@@ -57,16 +57,19 @@ async function* debateLoop(debate: Debate, product: Product, picked: Offer, { si
 
   yield { event: "start", data: { debateId: debate.debateId, product: toCard(product), picked } };
 
-  // A product the user brought from a link: both advisors see it as an alternative from the start,
-  // and the verdict may recommend it. Its price is read from the stored offer like any other.
-  if (compare && compare.id !== product.id) {
-    const o = bestOffer(compare);
-    s.alternatives.push(compare);
+  // Products the user asked to compare (from the results or a pasted link): both advisors see them as
+  // alternatives from the start, and the verdict may recommend one. Prices come from the stored offers.
+  const extra = compare.filter((c) => c.id !== product.id).slice(0, 2);
+  if (extra.length) {
+    s.alternatives.push(...extra);
     const ev = {
       from: "penny" as const,
       kind: "alternatives" as const,
-      title: "From your link",
-      items: [{ label: compare.title, price: o.price, note: o.merchant, productId: compare.id, offerId: o.offerId }],
+      title: extra.length === 1 ? "You asked to compare" : "You asked to compare these",
+      items: extra.map((c) => {
+        const o = bestOffer(c);
+        return { label: c.title, price: o.price, note: o.merchant, productId: c.id, offerId: o.offerId };
+      }),
       id: `ev-${s.evidence.length + 1}`,
     };
     s.evidence.push(ev);
@@ -255,14 +258,14 @@ async function* debateLoop(debate: Debate, product: Product, picked: Offer, { si
   const verdict = validateVerdict(raw, s) ?? ruleVerdict(s);
   await padFrom(t0, 1500, 2500);
   if (signal.aborted) return;
-  verdict.options = compareOptions(verdict, product, picked, compare);
+  verdict.options = compareOptions(verdict, product, picked, extra);
   debate.verdict = verdict;
   yield { event: "verdict", data: verdict };
 }
 
 // The comparison the user decides from: the verdict's pick, then the original pick if it differs.
 // Everything comes from the stored products and offers, never from the model.
-function compareOptions(v: Verdict, product: Product, picked: Offer, compare?: Product): VerdictOption[] {
+function compareOptions(v: Verdict, product: Product, picked: Offer, compare: Product[]): VerdictOption[] {
   const option = (productId: string, offerId: string): VerdictOption | undefined => {
     const p = getProduct(productId);
     const o = getOffer(productId, offerId);
@@ -272,10 +275,10 @@ function compareOptions(v: Verdict, product: Product, picked: Offer, compare?: P
       merchant: o.merchant, price: o.price, compareAtPrice: o.compareAtPrice, url: o.url, inStock: o.inStock,
       recommended: productId === v.productId && offerId === v.offerId,
       picked: productId === product.id && offerId === picked.offerId,
-      linked: !!compare && productId === compare.id,
+      linked: compare.some((c) => c.id === productId),
     };
   };
-  const linked = compare && compare.id !== product.id ? option(compare.id, bestOffer(compare).offerId) : undefined;
-  const out = [option(v.productId, v.offerId), option(product.id, picked.offerId), linked].filter((x): x is VerdictOption => !!x);
+  const added = compare.map((c) => option(c.id, bestOffer(c).offerId));
+  const out = [option(v.productId, v.offerId), option(product.id, picked.offerId), ...added].filter((x): x is VerdictOption => !!x);
   return out.filter((o, i) => out.findIndex((x) => x.productId === o.productId && x.offerId === o.offerId) === i);
 }

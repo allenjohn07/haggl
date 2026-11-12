@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LinkIcon, PlusIcon, XIcon } from "lucide-react";
+import { ArrowLeftRightIcon, PlusIcon, XIcon } from "lucide-react";
 import type { ProductCard } from "@/lib/types";
 import { Said } from "@/components/pixel/Speech";
 import { Button } from "@/components/ui/button";
@@ -12,11 +12,12 @@ import { sounds } from "../_lib/sounds";
 
 // "Compare with a link": paste a product page (Amazon, a brand's store, anywhere). The server looks it
 // up through Channel3 and the advisors weigh it against your pick.
-export function CompareLink({ value, onChange, pickedId }: { value: ProductCard | null; onChange: (c: ProductCard | null) => void; pickedId: string }) {
+export function CompareLink({ onAdd, pickedId }: { onAdd: (c: ProductCard) => void; pickedId: string }) {
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState("");
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState("");
+  const [note, setNote] = useState(""); // shown after a link is matched by name
 
   async function add() {
     const link = url.trim();
@@ -30,11 +31,12 @@ export function CompareLink({ value, onChange, pickedId }: { value: ProductCard 
     sounds.search();
     try {
       const res = await api.search(link);
-      const body = (await res.json().catch(() => ({}))) as { products?: ProductCard[]; error?: string };
+      const body = (await res.json().catch(() => ({}))) as { products?: ProductCard[]; error?: string; matchedBy?: "page" | "name" };
       const card = body.products?.[0];
       if (!res.ok || !card) throw new Error(body.error || "Couldn't read a price from that page. Try another link?");
       if (card.id === pickedId) throw new Error("That's the product you already picked.");
-      onChange(card);
+      onAdd(card);
+      setNote(body.matchedBy === "name" ? `Matched by the name in the link: ${card.title}` : "");
       sounds.pick();
       setOpen(false);
       setUrl("");
@@ -46,32 +48,10 @@ export function CompareLink({ value, onChange, pickedId }: { value: ProductCard 
     }
   }
 
-  if (value) {
-    return (
-      <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-[12px]">
-        <LinkIcon aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="min-w-0 flex-1 truncate text-text-2">
-          vs <span className="text-foreground">{value.title}</span> · <span className="num text-foreground">{money(value.bestOffer.price)}</span> at{" "}
-          {store(value.bestOffer.merchant)}
-        </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Remove the linked product"
-          onClick={() => {
-            sounds.close();
-            onChange(null);
-          }}
-          className="size-11 shrink-0 text-muted-foreground sm:size-6"
-        >
-          <XIcon aria-hidden />
-        </Button>
-      </div>
-    );
-  }
-
   if (!open) {
     return (
+      <>
+      {note && <p className="text-[12px] text-muted-foreground">{note}</p>}
       <Button
         variant="ghost"
         onClick={() => {
@@ -83,6 +63,7 @@ export function CompareLink({ value, onChange, pickedId }: { value: ProductCard 
         <PlusIcon aria-hidden className="size-3.5" />
         Compare with a product link
       </Button>
+      </>
     );
   }
 
@@ -106,7 +87,7 @@ export function CompareLink({ value, onChange, pickedId }: { value: ProductCard 
             setUrl(e.target.value);
             if (state === "error") setState("idle");
           }}
-          placeholder="Paste a product link, e.g. Best Buy or a brand\u2019s store"
+          placeholder="Paste a product link (Amazon, Best Buy, any store)"
           inputMode="url"
           autoComplete="off"
           maxLength={500}
@@ -142,5 +123,21 @@ export function CompareLink({ value, onChange, pickedId }: { value: ProductCard 
         </p>
       )}
     </form>
+  );
+}
+
+// A product the user is comparing against their pick, with a remove button.
+export function CompareChip({ card, onRemove }: { card: ProductCard; onRemove: () => void }) {
+  return (
+    <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-[12px]">
+      <ArrowLeftRightIcon aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 flex-1 truncate text-text-2">
+        vs <span className="text-foreground">{card.title}</span> · <span className="num text-foreground">{money(card.bestOffer.price)}</span> at{" "}
+        {store(card.bestOffer.merchant)}
+      </span>
+      <Button variant="ghost" size="icon" aria-label={`Stop comparing ${card.title}`} onClick={onRemove} className="size-11 shrink-0 text-muted-foreground sm:size-6">
+        <XIcon aria-hidden />
+      </Button>
+    </div>
   );
 }

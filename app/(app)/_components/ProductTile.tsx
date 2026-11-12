@@ -1,18 +1,35 @@
-import { CheckIcon, StarIcon } from "lucide-react";
+import { CheckIcon, PlusIcon, StarIcon } from "lucide-react";
 import type { ProductCard } from "@/lib/types";
 import { money, store } from "../_lib/format";
 
 // A product as shopping sites show it: big photo, title, rating, price. Tapping it picks it.
-export function ProductTile({ card, selected, onPick }: { card: ProductCard; selected: boolean; onPick: () => void }) {
+// Once something is picked, the other cards get a "Compare" toggle (up to 2).
+export function ProductTile({
+  card,
+  selected,
+  onPick,
+  compare,
+  onCompare,
+}: {
+  card: ProductCard;
+  selected: boolean;
+  onPick: () => void;
+  compare?: "off" | "on" | "full";
+  onCompare?: () => void;
+}) {
   const stores = `${card.offerCount} ${card.offerCount === 1 ? "store" : "stores"}`;
   return (
-    <li>
+    <li className="relative">
       <button
         type="button"
         onClick={onPick}
         aria-pressed={selected}
         className={`group relative flex h-full w-full flex-col overflow-hidden rounded-lg border text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-          selected ? "border-primary bg-primary/[0.07]" : "border-border bg-surface hover:border-white/15 hover:bg-surface-2"
+          selected
+            ? "border-primary bg-primary/[0.07]"
+            : compare === "on"
+              ? "border-white/30 bg-surface-2"
+              : "border-border bg-surface hover:border-white/15 hover:bg-surface-2"
         }`}
       >
         <Photo card={card} />
@@ -41,6 +58,24 @@ export function ProductTile({ card, selected, onPick }: { card: ProductCard; sel
           </span>
         </span>
       </button>
+      {compare && (
+        <button
+          type="button"
+          onClick={onCompare}
+          disabled={compare === "full"}
+          aria-pressed={compare === "on"}
+          aria-label={compare === "on" ? `Stop comparing ${card.title}` : `Compare ${card.title} with your pick`}
+          title={compare === "full" ? "You can compare up to 2" : undefined}
+          className={`absolute top-2 left-2 flex h-8 items-center gap-1 rounded-full border px-2.5 text-[11px] shadow transition-colors duration-150 disabled:opacity-40 ${
+            compare === "on"
+              ? "border-white/40 bg-foreground text-background"
+              : "border-black/10 bg-white/90 text-[#111] hover:bg-white"
+          }`}
+        >
+          {compare === "on" ? <CheckIcon aria-hidden className="size-3" /> : <PlusIcon aria-hidden className="size-3" />}
+          {compare === "on" ? "Comparing" : "Compare"}
+        </button>
+      )}
     </li>
   );
 }

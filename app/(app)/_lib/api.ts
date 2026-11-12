@@ -5,8 +5,8 @@ function post(url: string, body: unknown, signal?: AbortSignal) {
 
 export const api = {
   search: (query: string) => post("/api/search", { query }),
-  debate: (productId: string, offerId: string, signal: AbortSignal, compareId?: string) =>
-    post("/api/debate", { productId, offerId, compareId }, signal),
+  debate: (productId: string, offerId: string, signal: AbortSignal, compareIds: string[] = []) =>
+    post("/api/debate", { productId, offerId, compareIds }, signal),
   answer: (debateId: string, askId: string, answer: string) => post("/api/debate/answer", { debateId, askId, answer }),
   buy: (debateId: string, productId: string, offerId: string) => post("/api/buy", { debateId, productId, offerId }),
 };

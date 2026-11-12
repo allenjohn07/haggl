@@ -3,6 +3,7 @@ import type { Product } from "@/lib/types";
 import { c3Lookup, c3Search, c3Similar, type C3Result } from "./client";
 import { dedupe, multiStoreFirst } from "./dedupe";
 import { readProductPage } from "./page";
+import { productNameFromUrl } from "./slug";
 import { fixtureSet, fixtureSetFor } from "./fixtures";
 
 // Product search and alternatives. Contract: docs/CONTRACTS.md.
@@ -88,35 +89,55 @@ function stripBrand(p: Product): string {
 }
 
 // A product page URL the user pasted (Amazon, a brand's store, anywhere) -> one product, remembered.
-// Live: Channel3's lookup. Mock: a sample product standing in for the page, at that store, so the flow can be demoed offline.
-export async function lookupProduct(url: string): Promise<Product | null> {
+// Tries, in order: Channel3's lookup, the page's own product data, then the product name written in
+// the link itself, searched on Channel3 ("matched by name"). Amazon pages can't be read, so Amazon links
+// go straight to the name match. Mock mode falls back to a sample product so the flow demos offline.
+export type LinkMatch = { product: Product; matchedBy: "page" | "name" };
+
+export async function lookupProduct(url: string): Promise<LinkMatch | null> {
   let host = "";
   try {
     host = new URL(url).hostname.replace(/^www\./, "");
   } catch {
     return null;
   }
+  const readable = !/(^|\.)amazon\./i.test(host);
   let product: Product | null = null;
-  if (live()) {
+  if (readable && live()) {
     const found = await cached(`lookup:${url}`, async () => {
       const r = await c3Lookup(url);
       return r ? [r] : [];
     });
     product = found[0] ?? null;
   }
-  // Channel3 couldn't read it (or we're offline): read the page's own product data.
-  if (!product) product = await readProductPage(url);
-  if (!product && !live()) {
+  if (!product && readable) product = await readProductPage(url);
+  if (product) {
+    rememberProducts([product]);
+    return { product, matchedBy: "page" };
+  }
+
+  // The link's own words: the closest product by name.
+  const name = productNameFromUrl(url);
+  if (name) {
+    const words = name.split(" ");
+    const scored = (await searchProducts(name))
+      .map((p) => ({ p, hits: words.filter((w) => p.title.toLowerCase().includes(w)).length }))
+      .sort((a, b) => b.hits - a.hits);
+    if (scored[0] && scored[0].hits >= Math.min(2, words.length)) return { product: scored[0].p, matchedBy: "name" };
+  }
+
+  if (!live()) {
     const sample = fixtureSet(url.replace(/[^a-z0-9]+/gi, " ")).products[0];
     if (sample) {
       const price = bestOffer(sample).price;
-      product = {
+      const fake: Product = {
         ...sample,
         id: `fx-link-${host}-${sample.id}`,
         offers: [{ offerId: `fx-link-${host}-${sample.id}:${host}`, merchant: host, price, url, inStock: true }],
       };
+      rememberProducts([fake]);
+      return { product: fake, matchedBy: "page" };
     }
   }
-  if (product) rememberProducts([product]);
-  return product;
+  return null;
 }
