@@ -1,0 +1,35 @@
+# Render blueprint: one Node web service. Only `main` deploys.
+# Secrets (sync: false) are entered in the Render dashboard, never committed.
+services:
+  - type: web
+    name: haggl
+    runtime: node
+    plan: starter            # paid instance: no sleeping, so judges never hit a cold start
+    region: oregon
+    branch: main
+    autoDeploy: true
+    numInstances: 1          # purchases and debates live in memory: keep a single instance
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: AI_MODE
+        value: live
+      - key: AI_MODEL
+        value: claude-haiku-5-5
+      - key: SEARCH_MODE
+        value: live
+      - key: PAYPAL_BASE
+        value: https://api-m.sandbox.paypal.com
+      - key: APP_URL          # set to this service's https URL after the first deploy
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CHANNEL3_API_KEY
+        sync: false
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false

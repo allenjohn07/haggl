@@ -25,6 +25,7 @@ The first version (two agents bargaining over a price) was replaced on Tue Nov 1
 
 ## Render deployment
 
+- The service is defined in `render.yaml` (Blueprint): starter plan (no sleeping), one instance, `npm ci && npm run build`, `npm start`, health check `/`. Secrets are entered in the dashboard (sync: false).
 - New **Web Service** from the GitHub repo. Build: `npm install && npm run build`. Start: `npm start`.
 - Add every env var from `.env.example`. Set `APP_URL` to the Render URL.
 - Keep the instance awake through about Dec 21 (the $50 credit or a paid instance). Single instance only (in-memory stores).
