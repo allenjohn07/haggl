@@ -1,6 +1,6 @@
 import { bestOffer, rememberProducts } from "@/lib/products";
 import type { Product } from "@/lib/types";
-import { c3Search, c3Similar, type C3Result } from "./client";
+import { c3Lookup, c3Search, c3Similar, type C3Result } from "./client";
 import { dedupe, multiStoreFirst } from "./dedupe";
 import { fixtureSet, fixtureSetFor } from "./fixtures";
 
@@ -84,4 +84,35 @@ export async function findAlternatives(product: Product, limit = 3): Promise<Pro
 function stripBrand(p: Product): string {
   const t = p.brand ? p.title.replace(new RegExp(p.brand.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "ig"), "") : p.title;
   return t.split(/[,(|]/)[0].replace(/\s+/g, " ").trim() || p.title;
+}
+
+// A product page URL the user pasted (Amazon, a brand's store, anywhere) -> one product, remembered.
+// Live: Channel3's lookup. Mock: a sample product standing in for the page, at that store, so the flow can be demoed offline.
+export async function lookupProduct(url: string): Promise<Product | null> {
+  let host = "";
+  try {
+    host = new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+  let product: Product | null = null;
+  if (live()) {
+    const found = await cached(`lookup:${url}`, async () => {
+      const r = await c3Lookup(url);
+      return r ? [r] : [];
+    });
+    product = found[0] ?? null;
+  } else {
+    const sample = fixtureSet(url.replace(/[^a-z0-9]+/gi, " ")).products[0];
+    if (sample) {
+      const price = bestOffer(sample).price;
+      product = {
+        ...sample,
+        id: `fx-link-${host}-${sample.id}`,
+        offers: [{ offerId: `fx-link-${host}-${sample.id}:${host}`, merchant: host, price, url, inStock: true }],
+      };
+    }
+  }
+  if (product) rememberProducts([product]);
+  return product;
 }

@@ -17,10 +17,13 @@ import { api } from "../_lib/api";
 import { money, store } from "../_lib/format";
 import { ProductImage } from "./ProductImage";
 import { ProductTile } from "./ProductTile";
+import { CompareLink } from "./CompareLink";
 import { TopBar } from "./TopBar";
 import { StoreLink } from "./StoreLink";
 
 type Status = "idle" | "searching" | "done" | "empty" | "failed" | "busy";
+
+const isLink = (q: string) => /^https?:\/\/\S+$/i.test(q.trim());
 
 // A suggestion with the typed part in full colour and the rest muted.
 function Match({ text, query }: { text: string; query: string }) {
@@ -36,7 +39,7 @@ function Match({ text, query }: { text: string; query: string }) {
   );
 }
 
-export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) {
+export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: ProductCard) => void }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [results, setResults] = useState<ProductCard[]>([]);
@@ -44,6 +47,7 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
   const [line, setLine] = useState("");
   const [lastQuery, setLastQuery] = useState("");
   const input = useRef<HTMLInputElement>(null);
+  const [compare, setCompare] = useState<ProductCard | null>(null); // a product from a pasted link
   const [typeOpen, setTypeOpen] = useState(false);
   const [hi, setHi] = useState(-1); // highlighted suggestion, -1 = none
   const hints = typeOpen ? suggest(query) : [];
@@ -58,15 +62,16 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
         el.focus();
         el.select();
       } else if (e.key === "Enter" && selected && document.activeElement === document.body) {
-        onAsk(selected);
+        onAsk(selected, compare ?? undefined);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selected, onAsk]);
+  }, [selected, compare, onAsk]);
 
   async function search(q: string) {
-    const text = q.trim().slice(0, 80);
+    const raw = q.trim();
+    const text = isLink(raw) ? raw.slice(0, 500) : raw.slice(0, 80); // a pasted product link is looked up, not searched
     if (!text) return;
     setTypeOpen(false);
     setHi(-1);
@@ -84,7 +89,14 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
         setLine(pickLine(LINES.errors.busy));
         return;
       }
-      const body = (await res.json()) as { products?: ProductCard[] };
+      const body = (await res.json()) as { products?: ProductCard[]; error?: string };
+      if (res.status === 404 && isLink(text)) {
+        setResults([]);
+        setLine(body.error || "I couldn't read a price from that link. Try another?");
+        setStatus("empty");
+        sounds.error();
+        return;
+      }
       if (!res.ok || !body.products) throw new Error();
       setResults(body.products);
       setStatus(body.products.length ? "done" : "empty");
@@ -102,7 +114,11 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
     status === "searching" || status === "failed" || status === "busy"
       ? { who: "spark" as const, state: spark, text: line }
       : status === "empty"
-        ? { who: "penny" as const, state: penny, text: "Nothing on the shelves for that. Try another?" }
+        ? {
+            who: "penny" as const,
+            state: penny,
+            text: isLink(lastQuery) ? line : "Nothing on the shelves for that. Try another?",
+          }
         : selected
           ? { who: "penny" as const, state: penny, text: "Good pick. Shall we argue about it?" }
           : null;
@@ -155,8 +171,8 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
           aria-controls="q-suggestions"
           aria-autocomplete="list"
           aria-activedescendant={hi >= 0 && hi < hints.length ? `q-s-${hi}` : undefined}
-          maxLength={80}
-          placeholder="Headphones, a desk, an espresso machine"
+          maxLength={500}
+          placeholder="Headphones, a desk… or paste a product link"
           autoComplete="off"
           enterKeyHint="search"
           className="h-11 bg-surface pl-9 text-[16px] sm:h-10 sm:pr-12 sm:text-[14px]"
@@ -287,6 +303,9 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
 
       {selected && (
         <div className="anim-rise fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface-2 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:inset-x-auto sm:bottom-5 sm:left-1/2 sm:w-[min(40rem,calc(100%-3rem))] sm:-translate-x-1/2 sm:rounded-lg sm:border sm:p-2 sm:pl-3 sm:shadow-[0_8px_24px_rgb(0_0_0/0.35)]">
+          <div className="mb-2 flex flex-col sm:mb-1.5">
+            <CompareLink value={compare} onChange={setCompare} pickedId={selected.id} />
+          </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <ProductImage src={selected.image} alt="" brand={selected.brand} className="size-9 shrink-0" />
@@ -299,7 +318,7 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
             </div>
             <div className="flex gap-2">
               <StoreLink url={selected.bestOffer.url} merchant={selected.bestOffer.merchant} className="flex-1 sm:flex-none" />
-              <Button onClick={() => onAsk(selected)} className="h-11 flex-1 gap-2 px-4 sm:h-8 sm:flex-none sm:px-3">
+              <Button onClick={() => onAsk(selected, compare ?? undefined)} className="h-11 flex-1 gap-2 px-4 sm:h-8 sm:flex-none sm:px-3">
                 Ask Spark and Penny
                 <Kbd className="hidden bg-white/15 text-white/80 sm:inline-flex">↵</Kbd>
               </Button>
