@@ -123,7 +123,7 @@ export async function capturePurchase(purchaseId: string, orderId: string): Prom
   if (!purchase) return "missing";
   if (purchase.status === "captured") return "captured";
   if (!orderId || orderId !== purchase.paypalOrderId) {
-    console.error(`[paypal] capture for purchase ${forLog(purchaseId)}: order id does not match the purchase`);
+    console.error(`[paypal] capture for purchase ${forLog(purchase.purchaseId)}: order id does not match the purchase`); // our own stored id, not the request value
     return "failed";
   }
   const { ok } = await captureOrder(orderId);
