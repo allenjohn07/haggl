@@ -1,73 +1,75 @@
-# DEVPOST submission draft
+# DEVPOST submission
 
-Keep this in sync with `README.md`. Replace everything in [BRACKETS] before submitting. A submission with a bracket left in it is unfinished.
+Copy each section into the Devpost form. Keep this in sync with `README.md`. Only two brackets remain, and both need the owner: the sandbox buyer login and the YouTube link. A submission with a bracket left in it is unfinished.
 
 ## Project name
-Haggl: two AI advisors argue so you don't overspend
+Haggl
 
-## Tagline
-Pixel-art AI advisors debate your purchase, check other stores' prices, ask you what matters, and pay with PayPal only when you say yes.
+## Tagline (short)
+Two AI advisors argue about your purchase, check every store, and pay with PayPal only when you say yes.
 
 ## Description (name both PayPal and AI)
 
-**Inspiration.** Shopping agents are coming, but an AI that spends your money is hard to trust, and most of us overspend on impulse because nobody asks "do you need it?" or "is it cheaper elsewhere?". We wanted to make an agent's reasoning visible, a little funny, and include the human in every step.
+**Inspiration.** Shopping agents are coming, but an AI that spends your money is hard to trust. And most of us overspend on impulse because nobody asks "do you actually need it?" or "is it cheaper somewhere else?". We wanted an agent whose reasoning you can watch, that includes you in the decision, and that only pays when you say yes.
 
-**What it does.** Search for something you're thinking of buying and pick a store's price. Your two advisors, Spark (treat yourself) and Penny (frugal skeptic), message each other about it. Penny pulls the same item's prices at other stores and cheaper alternatives; Spark digs into ratings and features. Mid-debate they stop and ask you quick questions, and your answers change the argument. They end with a verdict: buy, buy it cheaper elsewhere, wait, or skip. If you tap Buy, Spark's agent closes the purchase by calling a tool that creates a PayPal order for the store's price; you approve in PayPal and get a receipt. Wherever a chat app would show typing dots, the advisor's pixel character pops in and talks instead.
+**What it does.** You search for something you're thinking of buying (real products and prices from many stores, via Channel3) and pick one. Two AI advisors then debate it in front of you: **Spark** says treat yourself, **Penny** is the frugal skeptic. Penny checks the same item at other stores and finds cheaper alternatives; Spark makes the case with ratings and features. Twice they stop and ask you a quick question, such as your budget or how often you'd use it, and your answers change the argument. They end with a verdict (buy, buy it cheaper elsewhere, wait, or skip) and a side-by-side comparison of their pick and yours. Tap **Buy with PayPal** and the advisor's agent creates the PayPal order itself; you approve it in PayPal and get a receipt. Wherever an app would show a spinner or typing dots, a pixel character pops in and talks instead. You can also paste a product link from any store, and past debates and receipts are saved in History.
 
-**How we built it.** Next.js and TypeScript on Render. Two Claude agents (Claude Haiku 5.5) take turns through the Anthropic SDK with tool use, streamed to the browser over server-sent events; the stream pauses for the user's answers and resumes. Channel3's product search API supplies products, each store's offer, and similar products. The server stores every offer and decides every price, rejects advisor messages that mention prices not in the evidence, and validates the verdict. The advisor's `create_paypal_order` tool creates a PayPal Orders v2 order in the sandbox; we capture it on return, idempotently. In the sandbox demo our PayPal business account stands in for the store; in production the store would be the merchant of record via PayPal's agent checkout. The characters are hand-drawn pixel art on an integer-scaled canvas, and their states follow the real server stages.
+**How we built it.**
+- **Stack:** Next.js and TypeScript on Render, styled with Tailwind and shadcn/ui.
+- **AI:** two Claude agents (Claude Haiku 5.5, Anthropic API) take turns with tool use: price check across stores, cheaper alternatives, a closer look at ratings, and a joint verdict. Every turn streams to the browser over server-sent events, and the stream pauses for your answers and resumes.
+- **Commerce data:** Channel3's product API supplies products, each store's offer, similar products and link lookups. When a pasted link can't be read, we match the product name written in the link.
+- **PayPal:** on Buy, the advisor calls a `create_paypal_order` tool that creates a PayPal **Orders v2** order (CAPTURE, USD) in the **sandbox** for the store's price. We capture it on return, exactly once, even if the page reloads. In this sandbox demo our PayPal business account stands in for the store; in production the store stays the merchant of record and is paid directly through PayPal's agentic commerce services.
+- **Trust in code, not prompts:**
+  - The server sets every price from the stored store offer; neither the browser nor the AI can change it.
+  - An advisor can't quote a price nobody found.
+  - The verdict is validated against real offers.
+  - A slow or failing AI turn falls back to a scripted, in-character move, so the demo never breaks.
+- **Craft:** hand-drawn pixel sprites on an integer-scaled canvas, with states that follow the real server stages; small synthesized sound effects; a mobile-first layout.
+- **Quality:** unit tests on the price, verdict, PayPal and link rules, plus CI and CodeQL on every pull request.
 
-**Challenges.** [FILL IN after the build.]
+**Challenges.** Making two LLM agents actually disagree instead of politely agreeing by message two, without inventing facts or prices. Pausing a live stream mid-debate to wait for the user, then resuming cleanly. Keeping prices honest: every number the agents say is checked against real store offers. Reading product links from big retailers that block automated access, which we solved by matching the product name in the link. And getting the payment step to feel safe: the agent prepares the order, but the human always approves it.
 
-**Accomplishments.** [FILL IN after the build.]
+**Accomplishments.** A complete, working loop: real products and prices, a live AI debate you can follow and steer, a verdict with a real comparison, and a real PayPal sandbox payment, all on a phone with no sign-in. Characters replace every loading state. The AI is creative, but the money rules are enforced in code and covered by tests.
 
-**What we learned.** [FILL IN.]
+**What we learned.** Agent trust comes from structure more than from prompts: validated tools, prices the server owns, and a human approval step. Two agents with opposite goals produce far more useful reasoning than one agent asked to be balanced. And waiting is a design opportunity: a character with something to say beats a spinner.
 
-**What's next.** Real checkout with the store as merchant of record through PayPal's agentic commerce services (Agent Ready, Store Sync), so the agent pays the actual store; only offering Buy for stores that accept PayPal; price-drop alerts for "wait" verdicts; spending limits the advisors respect.
+**What's next.** Real checkout with the store as merchant of record through PayPal's agentic commerce services (Agent Ready, Store Sync); offering Buy only at stores that accept PayPal; price-drop alerts for "wait" verdicts; and spending limits the advisors respect.
 
 ## Built with
-Next.js, TypeScript, Tailwind CSS, Anthropic Claude API (Claude Haiku 5.5), Channel3 API, PayPal REST API (Orders v2, sandbox), [PayPal Agent Toolkit if used], Render, HTML Canvas.
+Next.js, TypeScript, Tailwind CSS, shadcn/ui, Anthropic Claude API (Claude Haiku 5.5), PayPal REST API (Orders v2, sandbox), Channel3 API, Render, HTML Canvas, Vitest, GitHub Actions, CodeQL.
 
 ## AI tools used and how
-- **Claude Haiku 5.5** (Anthropic API): powers both advisors (personas, tool calls for price checks and alternatives, questions to the user, the verdict, and the PayPal tool call).
-- **Claude Code**: used to build the app, with parallel agents working in separate git worktrees.
-- Pixel characters and speech-line pools: [CONFIRM how they were made].
+- **Claude Haiku 5.5** (Anthropic API): powers both advisors in the product: the personas, the tool calls (price check, alternatives, closer look), the questions to the user, the joint verdict, and the `create_paypal_order` tool call that starts the payment.
+- **Claude Code**: used to build the app, including the code, the tests, the pixel sprites (drawn as pixel maps in code) and the speech-line pools, with the owner directing the design and every product decision.
 
 ## Sponsor tools to tick on the form
-Render (hosting), Channel3 (product search and prices).
+- **Render**: hosts the live demo.
+- **Channel3**: product search, store prices, similar products and link lookups.
 
 ## Testing instructions for judges (required)
-Open [DEMO URL] on a phone. No sign-in needed.
-1. Search for something (or tap a suggestion) and pick a product.
-2. Watch Spark and Penny debate. Tap an answer when they ask you something.
-3. On the verdict, tap **Buy** (PayPal).
-4. Log in to the PayPal **sandbox** with this test buyer account:
+Open **https://haggl-664a.onrender.com** on a phone or a computer. No sign-in needed.
+1. Tap **Start shopping**.
+2. Search for something, or tap a suggestion like "espresso machine", and tap a product to pick it. Then tap **Ask Spark and Penny**.
+3. Watch them debate. Tap an answer when they ask you something.
+4. On the verdict, tap **Buy with PayPal**.
+5. On PayPal's page, choose **Log In** (not the card form) and use this **sandbox** test buyer:
    - Email: [SANDBOX BUYER EMAIL]
    - Password: [SANDBOX BUYER PASSWORD]
-5. Approve the payment. You land on the receipt. No real money moves.
+6. Approve the payment. You land on the receipt. No real money moves.
+
+Optional: paste a product link (e.g. from Best Buy or Amazon) into the search box; open **History** to see past debates and transcripts.
 
 ## Links
-- Demo: [DEMO URL]
-- Repo: [GITHUB URL] (MIT license)
+- Demo: https://haggl-664a.onrender.com
+- Repo: https://github.com/allenjohn07/haggl (MIT license)
 - Video: [YOUTUBE URL] (public, under 3 minutes)
 
-## Video script (target 2:30, hard limit 3:00)
-| Time | What's on screen | Say |
-|---|---|---|
-| 0:00 to 0:12 | Phone, the search screen | "We all overspend on impulse. What if two advisors argued it out first?" |
-| 0:12 to 0:25 | Search, pick headphones at one store | "Meet Haggl. Pick something you want." |
-| 0:25 to 1:20 | The debate: characters popping in, price check card, a question, tapping an answer | Let it play; one line of narration at most |
-| 1:20 to 1:40 | Verdict card | "They agree: buy it, but at the cheaper store." |
-| 1:40 to 2:10 | Buy, Spark writes the order, PayPal sandbox approval, receipt | "The advisor calls a tool that creates the PayPal order. The server sets the price; nobody can tamper with it." |
-| 2:10 to 2:30 | Quick architecture card | "Claude agents, Channel3 prices, PayPal Orders, on Render. Haggl: shopping agents you can watch and trust." |
-
-Record on a real phone (screen recording). No copyrighted music. Upload early; processing takes time.
-
 ## Final checklist
-- [ ] Every [BRACKET] above is filled in
+- [ ] Every [BRACKET] above is filled in (sandbox buyer login, YouTube link)
 - [ ] PayPal and AI both named in the description, "Built with" and the video
 - [ ] Demo URL works on a phone from a cold start
-- [ ] Sandbox buyer credentials work
+- [ ] Sandbox buyer credentials work (log in once yourself first)
 - [ ] Repo is public, MIT license visible in About, README complete, no secrets
 - [ ] Video is public on YouTube and under 3 minutes
-- [ ] Sponsor tools ticked
+- [ ] Render and Channel3 ticked as sponsor tools
 - [ ] Submitted before 1:00pm Mountain Thursday (earlier is better)

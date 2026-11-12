@@ -114,17 +114,15 @@ function Trouble({ state, onRetry, onBack }: { state: DebateState; onRetry: () =
 export function DebateScreen({
   product,
   picked,
-  compare,
   onBack,
   onSkip,
 }: {
   product: ProductCard;
   picked: Offer;
-  compare?: ProductCard[]; // up to 2 products the user added to compare
   onBack: () => void;
   onSkip: (kept: number) => void;
 }) {
-  const { state, answer, retry } = useDebate(product.id, picked.offerId, { product, picked }, (compare ?? []).map((c) => c.id).join(","));
+  const { state, answer, retry } = useDebate(product.id, picked.offerId, { product, picked });
   const wide = useWide();
   const [transcript, setTranscript] = useState(false);
   const trouble = state.status === "error" || state.status === "busy";
@@ -135,8 +133,8 @@ export function DebateScreen({
   const shownPicked = state.picked ?? picked;
   useEffect(() => {
     if (phase !== "verdict" || !verdict || !debateId) return;
-    saveDebate({ debateId, at: Date.now(), product: shownProduct, picked: shownPicked, compare, verdict, items });
-  }, [phase, verdict, debateId, items, shownProduct, shownPicked, compare]);
+    saveDebate({ debateId, at: Date.now(), product: shownProduct, picked: shownPicked, verdict, items });
+  }, [phase, verdict, debateId, items, shownProduct, shownPicked]);
 
   // Esc goes back to the search on desktop, unless a sheet is open (Esc closes that first).
   useEffect(() => {

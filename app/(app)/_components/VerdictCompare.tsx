@@ -23,12 +23,8 @@ function Option({ o, single, cheapest }: { o: VerdictOption; single: boolean; ch
       ? "Your pick, and theirs"
       : "Their pick"
     : o.recommended
-      ? o.linked
-        ? "Their pick (you added it)"
-        : "Their pick"
-      : o.linked
-        ? "You added"
-        : "Your pick";
+      ? "Their pick"
+      : "Your pick";
   return (
     <article
       className={`flex flex-col gap-3 rounded-lg border p-3 ${o.recommended ? "border-primary/40 bg-primary/[0.06]" : "border-border bg-surface"}`}

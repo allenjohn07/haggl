@@ -11,7 +11,6 @@ export type HistoryEntry = {
   at: number;
   product: ProductCard;
   picked: Offer;
-  compare?: ProductCard[];
   verdict: Verdict;
   items: ChatItem[]; // the transcript
   outcome?: { kind: "bought"; purchaseId: string; title: string; price: number; merchant: string } | { kind: "skipped" };
