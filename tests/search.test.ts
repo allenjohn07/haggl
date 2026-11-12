@@ -108,3 +108,11 @@ describe("reading the product name from a link", () => {
     expect(productNameFromUrl("not a url")).toBeNull();
   });
 });
+
+describe("decoding product names from a page", () => {
+  it("decodes entities once (no double-unescaping)", async () => {
+    servePage(`<script type="application/ld+json">${JSON.stringify({ "@type": "Product", name: "Tom &amp; Jerry &amp;quot;Deluxe&amp;quot; &quot;Mug&quot;", offers: { price: "10", priceCurrency: "USD" } })}</script>`);
+    const p = await readProductPage("https://shop.example.com/mug");
+    expect(p?.title).toBe('Tom & Jerry &quot;Deluxe&quot; "Mug"');
+  });
+});
