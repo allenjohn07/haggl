@@ -32,7 +32,7 @@ search → pick a product and price → watch Spark and Penny debate (pixel char
 Making that path work, look great and hold up on a phone beats any new feature.
 
 - **Before starting anything new, name the moment in the demo where it shows.** If you can't, polish something on the path instead.
-- **Don't build:** accounts or auth, a database, admin or analytics pages, a real seller marketplace, multi-item carts, a refunds UI, extra settings, API routes no screen calls, tests beyond a smoke script, or config and abstractions for things we aren't demoing.
+- **Don't build:** accounts or auth, a database, admin or analytics pages, a real seller marketplace, multi-item carts, a refunds UI, extra settings, API routes no screen calls, tests beyond the unit tests in `tests/` and the smoke script, or config and abstractions for things we aren't demoing.
 - **Outcomes and research belong in the Devpost text,** not in new code.
 - If a prompt or doc asks for something off the path, skip it and tell the human why.
 
@@ -117,5 +117,7 @@ Stay inside your lane's files. If you must touch another lane, keep it tiny and 
 - Use the shared design tokens and components, or several sessions will produce several looks.
 - Keep code plain and short; the owner has to be able to explain all of it.
 - Keep the look consistent: the shared tokens and shadcn/ui components (`components/ui/*`), the indigo accent for actions, the two advisor colours only as small identity marks, Inter plus Geist Mono for prices (no other fonts), integer-scaled pixel sprites, HTML for all text. Shared stores (`lib/products.ts`, `lib/purchases.ts`, `lib/types.ts`) change only by small, stated additions.
+
+CI (`.github/workflows/ci.yml`) runs `npm run typecheck`, `npm run lint`, `npm test`, `npm run build` and `npm run smoke` on every PR; CodeQL scans for security issues. Run the same locally before merging, and add a unit test when you change a rule that protects prices or payments.
 
 Before you call something done, run it and see it work, and say plainly what you did and didn't check.

@@ -62,6 +62,17 @@ npm run dev        # http://localhost:3000
 
 With `AI_MODE=mock` and `SEARCH_MODE=mock`, the whole flow runs offline with no API cost.
 
+## Tests and checks
+
+```sh
+npm test            # unit tests (Vitest): price rules, verdict validation, PayPal order + idempotent capture, link reading
+npm run typecheck   # TypeScript
+npm run lint        # ESLint
+npm run smoke       # a full scripted debate, offline
+```
+
+GitHub Actions runs all of these plus a production build on every pull request, and CodeQL scans the code for security issues.
+
 ## Tech
 
 Next.js (App Router), TypeScript, Tailwind CSS, Anthropic Claude API, Channel3 product search API, PayPal REST API (Orders v2, sandbox), HTML Canvas pixel art. Hosted on Render.
