@@ -24,10 +24,10 @@ function Option({ o, single, cheapest }: { o: VerdictOption; single: boolean; ch
       : "Their pick"
     : o.recommended
       ? o.linked
-        ? "Their pick (your link)"
+        ? "Their pick (you added it)"
         : "Their pick"
       : o.linked
-        ? "From your link"
+        ? "You added"
         : "Your pick";
   return (
     <article

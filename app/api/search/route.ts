@@ -24,16 +24,14 @@ export async function POST(request: Request) {
 
   try {
     if (isUrl) {
-      // Channel3 can't read some stores' pages (Amazon refuses them outright), so say so plainly.
-      if (/(^|\.)amazon\./i.test(new URL(query).hostname)) {
-        return Response.json(
-          { products: [], error: "Amazon doesn't let shopping agents read its pages. Try the same product at Best Buy or the brand's own store." },
-          { status: 404 },
-        );
+      const match = await lookupProduct(query);
+      if (!match) {
+        const error = /(^|\.)amazon\./i.test(new URL(query).hostname)
+          ? "That Amazon link has no product name in it. Copy the full link from the product page, or search by name."
+          : "Couldn't read that link. Try the product's full page link, or search by name.";
+        return Response.json({ products: [], error }, { status: 404 });
       }
-      const product = await lookupProduct(query);
-      if (!product) return Response.json({ products: [], error: "Couldn't read a price from that page. Try another link?" }, { status: 404 });
-      return Response.json({ products: [toCard(product)], fromLink: true });
+      return Response.json({ products: [toCard(match.product)], fromLink: true, matchedBy: match.matchedBy });
     }
     const products = await searchProducts(query);
     return Response.json({ products: products.slice(0, 24).map(toCard) });

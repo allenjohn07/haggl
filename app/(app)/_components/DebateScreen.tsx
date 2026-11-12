@@ -120,11 +120,11 @@ export function DebateScreen({
 }: {
   product: ProductCard;
   picked: Offer;
-  compare?: ProductCard; // a product the user brought from a link
+  compare?: ProductCard[]; // up to 2 products the user added to compare
   onBack: () => void;
   onSkip: (kept: number) => void;
 }) {
-  const { state, answer, retry } = useDebate(product.id, picked.offerId, { product, picked }, compare?.id);
+  const { state, answer, retry } = useDebate(product.id, picked.offerId, { product, picked }, (compare ?? []).map((c) => c.id).join(","));
   const wide = useWide();
   const [transcript, setTranscript] = useState(false);
   const trouble = state.status === "error" || state.status === "busy";

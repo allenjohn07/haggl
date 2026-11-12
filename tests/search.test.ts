@@ -93,3 +93,18 @@ describe("search helpers", () => {
     expect(rateLimit("other-route", ip, 3, 60_000)).toBe(true);
   });
 });
+
+import { productNameFromUrl } from "@/lib/channel3/slug";
+
+describe("reading the product name from a link", () => {
+  it("pulls the descriptive part of common store links, without ids", () => {
+    expect(productNameFromUrl("https://www.amazon.com/Sony-WH-1000XM4-Canceling-Headphones/dp/B0863TXGM3")).toBe("sony wh 1000xm4 canceling headphones");
+    expect(productNameFromUrl("https://www.walmart.com/ip/Sony-WH-1000XM4-Wireless-Headphones-Black/530123373")).toBe("sony wh 1000xm4 wireless headphones black");
+    expect(productNameFromUrl("https://www.bestbuy.com/site/apple-airpods-pro/6447382.p?skuId=6447382")).toBe("apple airpods pro");
+  });
+
+  it("returns null when the link has no product name in it", () => {
+    expect(productNameFromUrl("https://www.amazon.com/dp/B0863TXGM3")).toBeNull();
+    expect(productNameFromUrl("not a url")).toBeNull();
+  });
+});

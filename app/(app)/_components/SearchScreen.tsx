@@ -17,7 +17,7 @@ import { api } from "../_lib/api";
 import { money, store } from "../_lib/format";
 import { ProductImage } from "./ProductImage";
 import { ProductTile, TileSkeleton } from "./ProductTile";
-import { CompareLink } from "./CompareLink";
+import { CompareChip, CompareLink } from "./CompareLink";
 import { HistoryLink, RecentDebates } from "./HistoryNav";
 import { TopBar } from "./TopBar";
 import { StoreLink } from "./StoreLink";
@@ -40,7 +40,7 @@ function Match({ text, query }: { text: string; query: string }) {
   );
 }
 
-export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: ProductCard) => void }) {
+export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare: ProductCard[]) => void }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [results, setResults] = useState<ProductCard[]>([]);
@@ -48,8 +48,9 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: P
   const [line, setLine] = useState("");
   const [lastQuery, setLastQuery] = useState("");
   const input = useRef<HTMLInputElement>(null);
-  const [shown, setShown] = useState(12); // results in the grid; "Show more" adds 12
-  const [compare, setCompare] = useState<ProductCard | null>(null); // a product from a pasted link
+  const [matchNote, setMatchNote] = useState(""); // a pasted link matched by its name, not its page
+  const [compares, setCompares] = useState<ProductCard[]>([]); // up to 2 products to weigh against the pick
+  const resultsRef = useRef<HTMLElement>(null);
   const [typeOpen, setTypeOpen] = useState(false);
   const [hi, setHi] = useState(-1); // highlighted suggestion, -1 = none
   const hints = typeOpen ? suggest(query) : [];
@@ -64,12 +65,12 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: P
         el.focus();
         el.select();
       } else if (e.key === "Enter" && selected && document.activeElement === document.body) {
-        onAsk(selected, compare ?? undefined);
+        onAsk(selected, compares);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selected, compare, onAsk]);
+  }, [selected, compares, onAsk]);
 
   async function search(q: string) {
     const raw = q.trim();
@@ -82,6 +83,8 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: P
     setStatus("searching");
     sounds.search();
     setSelected(null);
+    setCompares([]);
+    setMatchNote("");
     setLine(pickLine(LINES.spark.lookup, line));
     try {
       const res = await api.search(text);
@@ -91,7 +94,7 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: P
         setLine(pickLine(LINES.errors.busy));
         return;
       }
-      const body = (await res.json()) as { products?: ProductCard[]; error?: string };
+      const body = (await res.json()) as { products?: ProductCard[]; error?: string; matchedBy?: "page" | "name" };
       if (res.status === 404 && isLink(text)) {
         setResults([]);
         setLine(body.error || "I couldn't read a price from that link. Try another?");
@@ -101,8 +104,10 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: P
       }
       if (!res.ok || !body.products) throw new Error();
       setResults(body.products);
-      setShown(12);
       setStatus(body.products.length ? "done" : "empty");
+      setMatchNote(body.matchedBy === "name" ? "I couldn't open that page, so I matched the product by the name in the link." : "");
+      // Results appear under the search; bring them into view without leaving this page.
+      if (body.products.length) requestAnimationFrame(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
     } catch {
       setStatus("failed");
       sounds.error();
@@ -110,7 +115,7 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: P
     }
   }
 
-  const compact = results.length > 0 || status === "searching";
+  const hasResults = results.length > 0 || status === "searching";
   const spark: PixelState = status === "searching" ? "lookup" : status === "failed" || status === "busy" ? "sulk" : "idle";
   const penny: PixelState = status === "empty" || selected ? "think" : "idle";
   const say =
@@ -124,7 +129,9 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: P
           }
         : selected
           ? { who: "penny" as const, state: penny, text: "Good pick. Shall we argue about it?" }
-          : null;
+          : matchNote
+            ? { who: "penny" as const, state: penny, text: matchNote }
+            : null;
 
   const form = (
     <form
@@ -217,9 +224,7 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: P
 
   const chips = (
     <div
-      className={`scroll-quiet flex gap-1.5 ${
-        compact ? "-mx-4 flex-nowrap overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0" : "flex-wrap"
-      }`}
+      className="flex flex-wrap gap-1.5"
     >
       {SUGGESTIONS.map((s) => (
         <Button
@@ -256,39 +261,31 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: P
     <>
       <TopBar crumbs={[]} right={<HistoryLink />} />
       <main className={`flex flex-1 flex-col ${selected ? "pb-44 sm:pb-24" : "pb-10"}`}>
-        {compact ? (
-          <section className="flex flex-col gap-3 border-b border-border px-4 py-4 sm:px-6">
-            <div className="max-w-2xl">{form}</div>
+        <section className={`mx-auto flex w-full max-w-xl flex-col gap-5 px-4 ${hasResults ? "pt-10 sm:pt-14" : "pt-[10vh] sm:pt-[16vh]"}`}>
+          <div className="flex items-end gap-2">
+            <Pixel who="spark" state={spark} scale={2} />
+            <Pixel who="penny" state={penny} scale={2} />
+          </div>
+          <div>
+            <h1 className="text-[22px] leading-tight font-semibold tracking-[-0.022em] text-foreground sm:text-[24px]">
+              What are you thinking of buying?
+            </h1>
+            <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
+              Spark says treat yourself. Penny says check the price. They compare stores, ask you two quick questions, and give you a
+              straight answer.
+            </p>
+          </div>
+          {form}
+          <div className="flex flex-col gap-2">
+            <p className="text-[12px] text-muted-foreground">Try one</p>
             {chips}
-            {voice}
-          </section>
-        ) : (
-          <section className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 pt-[10vh] sm:pt-[16vh]">
-            <div className="flex items-end gap-2">
-              <Pixel who="spark" state={spark} scale={2} />
-              <Pixel who="penny" state={penny} scale={2} />
-            </div>
-            <div>
-              <h1 className="text-[22px] leading-tight font-semibold tracking-[-0.022em] text-foreground sm:text-[24px]">
-                What are you thinking of buying?
-              </h1>
-              <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
-                Spark says treat yourself. Penny says check the price. They compare stores, ask you two quick questions, and give you a
-                straight answer.
-              </p>
-            </div>
-            {form}
-            <div className="flex flex-col gap-2">
-              <p className="text-[12px] text-muted-foreground">Try one</p>
-              {chips}
-            </div>
-            <RecentDebates />
-            {voice}
-          </section>
-        )}
+          </div>
+          {!hasResults && <RecentDebates />}
+          {voice}
+        </section>
 
         {status === "searching" && (
-          <section aria-label="Loading results" aria-busy className="px-4 pt-4 pb-4 sm:px-6">
+          <section aria-label="Loading results" aria-busy className="mx-auto w-full max-w-6xl px-4 pt-10 pb-4 sm:px-6">
             <div className="mb-3 h-3 w-40 animate-pulse rounded bg-surface-2 motion-reduce:animate-none" />
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {Array.from({ length: 10 }, (_, i) => (
@@ -299,41 +296,57 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: P
         )}
 
         {results.length > 0 && status !== "searching" && (
-          <section aria-label="Results">
-            <p className="px-4 pt-4 pb-3 text-[12px] text-muted-foreground sm:px-6">
+          <section ref={resultsRef} aria-label="Results" className="mx-auto w-full max-w-6xl scroll-mt-4 pt-10">
+            <p className="px-4 pb-3 text-[12px] text-muted-foreground sm:px-6">
               {results.length} {results.length === 1 ? "result" : "results"} · best price across stores
+              {selected ? " · tap Compare to weigh up to 2 more against your pick" : " · tap one to pick it"}
             </p>
-            <ul className="grid grid-cols-2 gap-3 px-4 pb-4 sm:grid-cols-3 sm:px-6 lg:grid-cols-4 xl:grid-cols-5">
-              {results.slice(0, shown).map((c) => (
-                <ProductTile key={c.id} card={c} selected={selected?.id === c.id} onPick={() => {
-                    setSelected(c);
-                    sounds.pick();
-                  }}
-                />
-              ))}
+            <ul className="grid grid-cols-2 gap-3 px-4 pb-4 sm:grid-cols-3 sm:px-6 lg:grid-cols-4">
+              {results.map((c) => {
+                const comparing = compares.some((x) => x.id === c.id);
+                return (
+                  <ProductTile
+                    key={c.id}
+                    card={c}
+                    selected={selected?.id === c.id}
+                    onPick={() => {
+                      setSelected(c);
+                      setCompares((list) => list.filter((x) => x.id !== c.id));
+                      sounds.pick();
+                    }}
+                    compare={!selected || selected.id === c.id ? undefined : comparing ? "on" : compares.length >= 2 ? "full" : "off"}
+                    onCompare={() => {
+                      setCompares((list) => (comparing ? list.filter((x) => x.id !== c.id) : [...list, c].slice(0, 2)));
+                      if (comparing) sounds.close();
+                      else sounds.pick();
+                    }}
+                  />
+                );
+              })}
             </ul>
-            {results.length > shown && (
-              <div className="flex justify-center px-4 pb-6">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    sounds.tap();
-                    setShown((n) => n + 12);
-                  }}
-                  className="h-11 px-5 text-[13px] font-normal sm:h-9"
-                >
-                  Show more ({results.length - shown})
-                </Button>
-              </div>
-            )}
           </section>
         )}
       </main>
 
       {selected && (
-        <div className="anim-rise fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface-2 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:inset-x-auto sm:bottom-5 sm:left-1/2 sm:w-[min(40rem,calc(100%-3rem))] sm:-translate-x-1/2 sm:rounded-lg sm:border sm:p-2 sm:pl-3 sm:shadow-[0_8px_24px_rgb(0_0_0/0.35)]">
-          <div className="mb-2 flex flex-col sm:mb-1.5">
-            <CompareLink value={compare} onChange={setCompare} pickedId={selected.id} />
+        <div className="anim-rise scroll-quiet max-h-[70dvh] overflow-y-auto fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface-2 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:inset-x-auto sm:bottom-5 sm:left-1/2 sm:w-[min(40rem,calc(100%-3rem))] sm:-translate-x-1/2 sm:rounded-lg sm:border sm:p-2 sm:pl-3 sm:shadow-[0_8px_24px_rgb(0_0_0/0.35)]">
+          <div className="mb-2 flex flex-col gap-1.5 sm:mb-1.5">
+            {compares.map((c) => (
+              <CompareChip
+                key={c.id}
+                card={c}
+                onRemove={() => {
+                  sounds.close();
+                  setCompares((list) => list.filter((x) => x.id !== c.id));
+                }}
+              />
+            ))}
+            {compares.length < 2 && (
+              <CompareLink
+                pickedId={selected.id}
+                onAdd={(card) => setCompares((list) => (list.some((x) => x.id === card.id) ? list : [...list, card].slice(0, 2)))}
+              />
+            )}
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -347,7 +360,7 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: P
             </div>
             <div className="flex gap-2">
               <StoreLink url={selected.bestOffer.url} merchant={selected.bestOffer.merchant} className="flex-1 sm:flex-none" />
-              <Button onClick={() => onAsk(selected, compare ?? undefined)} className="h-11 flex-1 gap-2 px-4 sm:h-8 sm:flex-none sm:px-3">
+              <Button onClick={() => onAsk(selected, compares)} className="h-11 flex-1 gap-2 px-4 sm:h-8 sm:flex-none sm:px-3">
                 Ask Spark and Penny
                 <Kbd className="hidden bg-white/15 text-white/80 sm:inline-flex">↵</Kbd>
               </Button>
