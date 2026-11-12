@@ -67,3 +67,18 @@ function Photo({ card }: { card: ProductCard }) {
     </span>
   );
 }
+
+// A placeholder card while results load: the same shape as a product, softly pulsing.
+export function TileSkeleton() {
+  return (
+    <li aria-hidden className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface">
+      <span className="block aspect-square w-full animate-pulse motion-reduce:animate-none bg-surface-2" />
+      <span className="flex flex-col gap-2 p-3">
+        <span className="h-2.5 w-1/3 animate-pulse motion-reduce:animate-none rounded bg-surface-2" />
+        <span className="h-3 w-full animate-pulse motion-reduce:animate-none rounded bg-surface-2" />
+        <span className="h-3 w-2/3 animate-pulse motion-reduce:animate-none rounded bg-surface-2" />
+        <span className="mt-2 h-4 w-1/3 animate-pulse motion-reduce:animate-none rounded bg-surface-2" />
+      </span>
+    </li>
+  );
+}

@@ -8,7 +8,7 @@ import { fixtureSet, fixtureSetFor } from "./fixtures";
 // SEARCH_MODE=live (with CHANNEL3_API_KEY) calls Channel3; anything else, or any failure, serves fixtures.
 // Both functions remember what they return in lib/products.
 
-const MAX_RESULTS = 8;
+const MAX_RESULTS = 24; // the grid shows 12, then "Show more"
 const CACHE_MS = 10 * 60 * 1000;
 
 const g = globalThis as unknown as {

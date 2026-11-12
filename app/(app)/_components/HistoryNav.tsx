@@ -13,7 +13,6 @@ import { ProductImage } from "./ProductImage";
 
 // Top-bar link to the history page.
 export function HistoryLink() {
-  const list = useSyncExternalStore(subscribeHistory, readHistory, historyServerSnapshot);
   return (
     <Link
       href="/history"
@@ -22,7 +21,6 @@ export function HistoryLink() {
     >
       <HistoryIcon aria-hidden className="size-4" />
       History
-      {list.length > 0 && <span className="rounded-sm bg-surface-2 px-1.5 text-[11px] text-text-2 tabular-nums">{list.length}</span>}
     </Link>
   );
 }

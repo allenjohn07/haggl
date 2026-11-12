@@ -16,7 +16,7 @@ import { sounds } from "../_lib/sounds";
 import { api } from "../_lib/api";
 import { money, store } from "../_lib/format";
 import { ProductImage } from "./ProductImage";
-import { ProductTile } from "./ProductTile";
+import { ProductTile, TileSkeleton } from "./ProductTile";
 import { CompareLink } from "./CompareLink";
 import { HistoryLink, RecentDebates } from "./HistoryNav";
 import { TopBar } from "./TopBar";
@@ -48,6 +48,7 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: P
   const [line, setLine] = useState("");
   const [lastQuery, setLastQuery] = useState("");
   const input = useRef<HTMLInputElement>(null);
+  const [shown, setShown] = useState(12); // results in the grid; "Show more" adds 12
   const [compare, setCompare] = useState<ProductCard | null>(null); // a product from a pasted link
   const [typeOpen, setTypeOpen] = useState(false);
   const [hi, setHi] = useState(-1); // highlighted suggestion, -1 = none
@@ -100,6 +101,7 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: P
       }
       if (!res.ok || !body.products) throw new Error();
       setResults(body.products);
+      setShown(12);
       setStatus(body.products.length ? "done" : "empty");
     } catch {
       setStatus("failed");
@@ -285,13 +287,24 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: P
           </section>
         )}
 
-        {results.length > 0 && (
-          <section aria-label="Results" className={`transition-opacity duration-150 ${status === "searching" ? "opacity-40" : ""}`}>
+        {status === "searching" && (
+          <section aria-label="Loading results" aria-busy className="px-4 pt-4 pb-4 sm:px-6">
+            <div className="mb-3 h-3 w-40 animate-pulse rounded bg-surface-2 motion-reduce:animate-none" />
+            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {Array.from({ length: 10 }, (_, i) => (
+                <TileSkeleton key={i} />
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {results.length > 0 && status !== "searching" && (
+          <section aria-label="Results">
             <p className="px-4 pt-4 pb-3 text-[12px] text-muted-foreground sm:px-6">
               {results.length} {results.length === 1 ? "result" : "results"} · best price across stores
             </p>
             <ul className="grid grid-cols-2 gap-3 px-4 pb-4 sm:grid-cols-3 sm:px-6 lg:grid-cols-4 xl:grid-cols-5">
-              {results.map((c) => (
+              {results.slice(0, shown).map((c) => (
                 <ProductTile key={c.id} card={c} selected={selected?.id === c.id} onPick={() => {
                     setSelected(c);
                     sounds.pick();
@@ -299,6 +312,20 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: P
                 />
               ))}
             </ul>
+            {results.length > shown && (
+              <div className="flex justify-center px-4 pb-6">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    sounds.tap();
+                    setShown((n) => n + 12);
+                  }}
+                  className="h-11 px-5 text-[13px] font-normal sm:h-9"
+                >
+                  Show more ({results.length - shown})
+                </Button>
+              </div>
+            )}
           </section>
         )}
       </main>
