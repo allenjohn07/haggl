@@ -5,6 +5,7 @@ import type { Advisor, Ask, Evidence, Offer, ProductCard, Stage, Verdict } from 
 import type { PixelState } from "@/components/pixel/sprites";
 import { ACKS, LINES, pickLine } from "@/data/lines";
 import { api } from "./api";
+import { sounds } from "./sounds";
 import { readSSE } from "./sse";
 
 // The debate stream turned into stage state, following the CONTRACTS.md character table.
@@ -154,6 +155,7 @@ export function useDebate(productId: string, offerId: string, initial: { product
               set((s) => ({ ...s, lines: { ...s.lines, [a]: r }, moods: moods(a, "talk") }));
               await hold(reactTime(d.reaction));
             }
+            sounds.say(a);
             const l = line("say", d.text);
             set((s) => ({
               ...s,
@@ -171,6 +173,7 @@ export function useDebate(productId: string, offerId: string, initial: { product
             await hold(BEAT.evidence);
           } else if (event === "ask") {
             const d = data as Ask;
+            sounds.ask();
             const l = line("ask", d.question);
             set((s) => ({
               ...s,
@@ -200,6 +203,7 @@ export function useDebate(productId: string, offerId: string, initial: { product
           } else if (event === "verdict") {
             const v = data as Verdict;
             finished = true;
+            sounds.verdict();
             const vm = verdictMoods(v);
             const said = (a: Advisor) => line("react", pick(`${a}.${vm[a]}`, LINES[a][vm[a]]));
             set((s) => ({ ...s, status: "verdict", verdict: v, evidence: null, huddle: null, you: null, lines: { spark: said("spark"), penny: said("penny") }, moods: vm }));

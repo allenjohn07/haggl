@@ -11,10 +11,12 @@ import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { LINES, pickLine } from "@/data/lines";
 import { SUGGESTIONS } from "@/data/fixtures/suggestions";
+import { suggest } from "@/data/typeahead";
 import { api } from "../_lib/api";
 import { money, store } from "../_lib/format";
 import { ProductImage } from "./ProductImage";
 import { TopBar } from "./TopBar";
+import { StoreLink } from "./StoreLink";
 
 type Status = "idle" | "searching" | "done" | "empty" | "failed" | "busy";
 
@@ -70,6 +72,20 @@ function ResultRow({ card, selected, onPick }: { card: ProductCard; selected: bo
   );
 }
 
+// A suggestion with the typed part in full colour and the rest muted.
+function Match({ text, query }: { text: string; query: string }) {
+  const q = query.trim().toLowerCase();
+  const at = q ? text.indexOf(q) : -1;
+  if (at < 0) return <span className="truncate text-text-2">{text}</span>;
+  return (
+    <span className="truncate">
+      <span className="text-muted-foreground">{text.slice(0, at)}</span>
+      <span className="text-foreground">{text.slice(at, at + q.length)}</span>
+      <span className="text-muted-foreground">{text.slice(at + q.length)}</span>
+    </span>
+  );
+}
+
 export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<Status>("idle");
@@ -78,6 +94,9 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
   const [line, setLine] = useState("");
   const [lastQuery, setLastQuery] = useState("");
   const input = useRef<HTMLInputElement>(null);
+  const [typeOpen, setTypeOpen] = useState(false);
+  const [hi, setHi] = useState(-1); // highlighted suggestion, -1 = none
+  const hints = typeOpen ? suggest(query) : [];
 
   // ⌘K / Ctrl+K focuses the search; Enter asks about the pick when the search box isn't focused.
   useEffect(() => {
@@ -99,6 +118,8 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
   async function search(q: string) {
     const text = q.trim().slice(0, 80);
     if (!text) return;
+    setTypeOpen(false);
+    setHi(-1);
     setQuery(text);
     setLastQuery(text);
     setStatus("searching");
@@ -150,7 +171,35 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
           ref={input}
           id="q"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setTypeOpen(true);
+            setHi(-1);
+          }}
+          onFocus={() => setTypeOpen(true)}
+          onBlur={() => setTypeOpen(false)}
+          onKeyDown={(e) => {
+            if (!hints.length) return;
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setHi((i) => (i + 1) % hints.length);
+            } else if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setHi((i) => (i <= 0 ? hints.length - 1 : i - 1));
+            } else if (e.key === "Enter" && hi >= 0 && hi < hints.length) {
+              e.preventDefault();
+              search(hints[hi]);
+            } else if (e.key === "Escape") {
+              e.preventDefault();
+              setTypeOpen(false);
+              setHi(-1);
+            }
+          }}
+          role="combobox"
+          aria-expanded={hints.length > 0}
+          aria-controls="q-suggestions"
+          aria-autocomplete="list"
+          aria-activedescendant={hi >= 0 && hi < hints.length ? `q-s-${hi}` : undefined}
           maxLength={80}
           placeholder="Headphones, a desk, an espresso machine"
           autoComplete="off"
@@ -158,6 +207,33 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
           className="h-11 bg-surface pl-9 text-[16px] sm:h-10 sm:pr-12 sm:text-[14px]"
         />
         <Kbd className="absolute top-1/2 right-2.5 hidden -translate-y-1/2 border border-border bg-surface-2 sm:inline-flex">⌘K</Kbd>
+        {hints.length > 0 && (
+          <ul
+            id="q-suggestions"
+            role="listbox"
+            aria-label="Suggestions"
+            className="anim-rise absolute inset-x-0 top-full z-40 mt-1 overflow-hidden rounded-md border border-border bg-surface-2 py-1 shadow-[0_8px_24px_rgb(0_0_0/0.35)]"
+          >
+            {hints.map((h, i) => (
+              <li
+                key={h}
+                id={`q-s-${i}`}
+                role="option"
+                aria-selected={i === hi}
+                // mousedown, not click: runs before the input's blur closes the list
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  search(h);
+                }}
+                onMouseEnter={() => setHi(i)}
+                className={`flex h-11 cursor-pointer items-center gap-2.5 px-3 text-[14px] sm:h-8 sm:text-[13px] ${i === hi ? "bg-accent" : ""}`}
+              >
+                <SearchIcon aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
+                <Match text={h} query={query} />
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       <Button type="submit" disabled={!query.trim() || status === "searching"} className="h-11 px-4 sm:h-10">
         Search
@@ -267,10 +343,13 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
                 </p>
               </div>
             </div>
-            <Button onClick={() => onAsk(selected)} className="h-11 gap-2 px-4 sm:h-8 sm:px-3">
-              Ask Spark and Penny
-              <Kbd className="hidden bg-white/15 text-white/80 sm:inline-flex">↵</Kbd>
-            </Button>
+            <div className="flex gap-2">
+              <StoreLink url={selected.bestOffer.url} merchant={selected.bestOffer.merchant} className="flex-1 sm:flex-none" />
+              <Button onClick={() => onAsk(selected)} className="h-11 flex-1 gap-2 px-4 sm:h-8 sm:flex-none sm:px-3">
+                Ask Spark and Penny
+                <Kbd className="hidden bg-white/15 text-white/80 sm:inline-flex">↵</Kbd>
+              </Button>
+            </div>
           </div>
         </div>
       )}

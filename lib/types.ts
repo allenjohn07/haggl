@@ -71,6 +71,7 @@ export type Verdict = {
   offerId: string;            // which offer; must exist on that stored product
   price: number;              // copied from the stored offer by the server
   savings?: number;           // vs. the offer the user first picked, if cheaper
+  options?: VerdictOption[];  // comparison: recommended first, then the original pick if different (set by the server)
 };
 
 export type Purchase = {
@@ -85,4 +86,22 @@ export type Purchase = {
   status: "created" | "order_created" | "captured" | "failed";
   paypalOrderId?: string;
   createdAt: number;
+};
+
+// One product in the verdict's comparison, built by the server from its stored offers.
+// The verdict lists the recommended offer first, then the user's original pick if it differs.
+export type VerdictOption = {
+  productId: string;
+  offerId: string;
+  title: string;
+  brand?: string;
+  image?: string;
+  rating?: { score: number; count: number };
+  merchant: string;
+  price: number;
+  compareAtPrice?: number;
+  url: string;                // the store's product page
+  inStock: boolean;
+  recommended: boolean;       // the verdict's pick
+  picked: boolean;            // the user's original pick
 };

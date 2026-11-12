@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeftIcon, ListIcon } from "lucide-react";
+import { ChevronLeftIcon, ListIcon, StarIcon } from "lucide-react";
 import type { Offer, ProductCard } from "@/lib/types";
 import { Pixel } from "@/components/pixel/Pixel";
 import { Speech } from "@/components/pixel/Speech";
@@ -13,24 +13,37 @@ import { money, store } from "../_lib/format";
 import { ProductImage } from "./ProductImage";
 import { Stage } from "./Stage";
 import { Status, TopBar } from "./TopBar";
+import { SoundToggle } from "./SoundToggle";
+import { StoreLink } from "./StoreLink";
 import { Transcript } from "./Transcript";
 import { callLabel, VerdictSheet } from "./VerdictSheet";
 
 const MAX_TURNS = 8;
 
 function ProductBar({ product, picked }: { product: ProductCard; picked: Offer }) {
+  const stores = `${product.offerCount} ${product.offerCount === 1 ? "store" : "stores"}`;
   return (
-    <div className="flex h-12 shrink-0 items-center gap-3 border-b border-border px-4 sm:px-5">
-      <ProductImage src={product.image} alt="" brand={product.brand} className="size-8 shrink-0" />
-      <div className="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-center sm:gap-3">
-        <p className="truncate text-[13px] text-foreground">{product.title}</p>
-        <p className="shrink-0 text-[12px] text-muted-foreground">
+    <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-2.5 sm:gap-4 sm:px-5">
+      <ProductImage src={product.image} alt={product.title} brand={product.brand} className="size-12 shrink-0 sm:size-14" />
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-1 text-[14px] font-medium text-foreground">{product.title}</p>
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12px] text-muted-foreground">
+          {product.brand && <span>{product.brand}</span>}
+          {product.rating && (
+            <span className="inline-flex items-center gap-1">
+              <StarIcon aria-hidden className="size-3 fill-current" />
+              <span className="text-text-2 tabular-nums">{product.rating.score.toFixed(1)}</span>
+              <span className="tabular-nums">({product.rating.count.toLocaleString("en-US")})</span>
+            </span>
+          )}
+          <span className="hidden sm:inline">{stores}</span>
+        </p>
+        <p className="mt-0.5 text-[12px] text-muted-foreground">
           Your pick <span className="num text-foreground">{money(picked.price)}</span> at {store(picked.merchant)}
         </p>
       </div>
-      <p className="hidden shrink-0 text-[12px] text-muted-foreground md:block">
-        {product.offerCount} {product.offerCount === 1 ? "store" : "stores"}
-      </p>
+      <StoreLink url={picked.url} merchant={picked.merchant} compact className="shrink-0 sm:hidden" />
+      <StoreLink url={picked.url} merchant={picked.merchant} className="hidden shrink-0 sm:inline-flex" />
     </div>
   );
 }
@@ -137,7 +150,12 @@ export function DebateScreen({
           </Button>
         }
         crumbs={wide ? [] : ["Spark vs Penny"]}
-        right={status}
+        right={
+          <>
+            {status}
+            <SoundToggle />
+          </>
+        }
       />
       <ProductBar product={shownProduct} picked={state.picked ?? picked} />
       {trouble ? (
