@@ -126,3 +126,9 @@ export function appUrl(path: string): string {
   const base = (isLocal && render ? render : configured || "http://localhost:3000").replace(/\/+$/, "");
   return `${base}${path}`;
 }
+
+// Ids that came from a request (purchase ids, PayPal tokens) are cleaned before they reach a log line,
+// so a crafted value can't add fake lines to the logs.
+export function forLog(value: string): string {
+  return value.replace(/[^A-Za-z0-9_-]/g, "?").slice(0, 64);
+}

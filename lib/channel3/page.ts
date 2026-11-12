@@ -156,7 +156,9 @@ function isPrivateHost(host: string): boolean {
   return false;
 }
 
-const clean = (s: string) => s.replace(/&amp;/g, "&").replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, " ").trim();
+// Decode the few HTML entities product names use, in one pass (so "&amp;quot;" stays "&quot;").
+const ENTITIES: Record<string, string> = { "&amp;": "&", "&#39;": "'", "&apos;": "'", "&quot;": '"', "&lt;": "<", "&gt;": ">" };
+const clean = (s: string) => s.replace(/&(?:amp|#39|apos|quot|lt|gt);/g, (m) => ENTITIES[m]).replace(/\s+/g, " ").trim();
 
 function hash(s: string): string {
   let h = 5381;

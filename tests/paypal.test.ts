@@ -117,3 +117,13 @@ describe("appUrl (PayPal's return address)", () => {
     expect(appUrl("/app")).toBe("http://localhost:3000/app");
   });
 });
+
+import { forLog } from "@/lib/paypal/client";
+
+describe("forLog", () => {
+  it("keeps ids readable but strips anything that could forge a log line", () => {
+    expect(forLog("8f3c-ORDER_1")).toBe("8f3c-ORDER_1");
+    expect(forLog("abc\n[paypal] fake line")).toBe("abc??paypal??fake?line");
+    expect(forLog("x".repeat(100))).toHaveLength(64);
+  });
+});

@@ -1,5 +1,5 @@
 import { getPurchase, updatePurchase } from "@/lib/purchases";
-import { appUrl, describeError, PayPalError, paypalFetch } from "@/lib/paypal/client";
+import { appUrl, describeError, forLog, PayPalError, paypalFetch } from "@/lib/paypal/client";
 
 // PayPal Orders v2. Verified against https://developer.paypal.com/api/orders/v2/schema.json (v2.36):
 // - create: POST /v2/checkout/orders, return/cancel URLs in payment_source.paypal.experience_context
@@ -71,7 +71,7 @@ async function createOrder(purchaseId: string): Promise<{ orderId: string; appro
     updatePurchase(purchaseId, { status: "order_created", paypalOrderId: order.id });
     return { orderId: order.id, approveUrl };
   } catch (err) {
-    console.error(`[paypal] create order failed for purchase ${purchaseId}: ${describeError(err)}`);
+    console.error(`[paypal] create order failed for purchase ${forLog(purchaseId)}: ${describeError(err)}`);
     if (getPurchase(purchaseId)?.status !== "captured") updatePurchase(purchaseId, { status: "failed" });
     throw err;
   }
@@ -102,9 +102,9 @@ async function doCapture(orderId: string): Promise<{ ok: boolean; captureId?: st
       body: {},
     });
     if (order.status === "COMPLETED") return { ok: true, captureId: captureIdOf(order) };
-    console.error(`[paypal] capture of ${orderId} returned status ${order.status}`);
+    console.error(`[paypal] capture of ${forLog(orderId)} returned status ${order.status}`);
   } catch (err) {
-    console.error(`[paypal] capture of ${orderId} failed: ${describeError(err)}`);
+    console.error(`[paypal] capture of ${forLog(orderId)} failed: ${describeError(err)}`);
     if (err instanceof PayPalError && err.status === 0) return { ok: false }; // no config / no network
   }
   // Already captured (ORDER_ALREADY_CAPTURED) or an unclear result: ask PayPal for the truth.
@@ -112,7 +112,7 @@ async function doCapture(orderId: string): Promise<{ ok: boolean; captureId?: st
     const order = await paypalFetch<Order>(path, { method: "GET" });
     if (order.status === "COMPLETED") return { ok: true, captureId: captureIdOf(order) };
   } catch (err) {
-    console.error(`[paypal] get order ${orderId} failed: ${describeError(err)}`);
+    console.error(`[paypal] get order ${forLog(orderId)} failed: ${describeError(err)}`);
   }
   return { ok: false };
 }
@@ -123,7 +123,7 @@ export async function capturePurchase(purchaseId: string, orderId: string): Prom
   if (!purchase) return "missing";
   if (purchase.status === "captured") return "captured";
   if (!orderId || orderId !== purchase.paypalOrderId) {
-    console.error(`[paypal] capture for purchase ${purchaseId}: order id does not match the purchase`);
+    console.error(`[paypal] capture for purchase ${forLog(purchase.purchaseId)}: order id does not match the purchase`); // our own stored id, not the request value
     return "failed";
   }
   const { ok } = await captureOrder(orderId);
