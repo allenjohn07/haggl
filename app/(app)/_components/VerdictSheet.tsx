@@ -16,6 +16,7 @@ import { api } from "../_lib/api";
 import { money, store } from "../_lib/format";
 import { PayPalButton } from "./PayPalButton";
 import { VerdictCompare } from "./VerdictCompare";
+import { setOutcome } from "../_lib/history";
 import { sounds } from "../_lib/sounds";
 
 type Target = { productId: string; offerId: string };
@@ -80,6 +81,17 @@ export function VerdictSheet({ state, wide, onSkip }: { state: DebateState; wide
     try {
       const res = await api.buy(state.debateId!, target.productId, target.offerId);
       const body = (await res.json().catch(() => ({}))) as { approveUrl?: string; purchaseId?: string };
+      if (body.purchaseId) {
+        // Remember it in this browser's history, so the receipt can be found again later.
+        const o = v.options?.find((x) => x.productId === target.productId && x.offerId === target.offerId);
+        setOutcome(state.debateId!, {
+          kind: "bought",
+          purchaseId: body.purchaseId,
+          title: o?.title ?? title,
+          price: o?.price ?? v.price,
+          merchant: o?.merchant ?? merchant ?? "",
+        });
+      }
       if (res.ok && body.approveUrl) {
         window.location.assign(body.approveUrl);
         return;

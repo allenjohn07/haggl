@@ -18,6 +18,7 @@ import { money, store } from "../_lib/format";
 import { ProductImage } from "./ProductImage";
 import { ProductTile } from "./ProductTile";
 import { CompareLink } from "./CompareLink";
+import { HistoryLink, RecentDebates } from "./HistoryNav";
 import { TopBar } from "./TopBar";
 import { StoreLink } from "./StoreLink";
 
@@ -251,7 +252,7 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: P
 
   return (
     <>
-      <TopBar crumbs={[]} />
+      <TopBar crumbs={[]} right={<HistoryLink />} />
       <main className={`flex flex-1 flex-col ${selected ? "pb-44 sm:pb-24" : "pb-10"}`}>
         {compact ? (
           <section className="flex flex-col gap-3 border-b border-border px-4 py-4 sm:px-6">
@@ -279,6 +280,7 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard, compare?: P
               <p className="text-[12px] text-muted-foreground">Try one</p>
               {chips}
             </div>
+            <RecentDebates />
             {voice}
           </section>
         )}

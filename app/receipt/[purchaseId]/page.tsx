@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { LINES, pickLine } from "@/data/lines";
 import { money, store } from "@/app/(app)/_lib/format";
 import { TopBar } from "@/app/(app)/_components/TopBar";
+import { HistoryLink } from "@/app/(app)/_components/HistoryNav";
 import { RetryPay, ShareLine } from "./ReceiptActions";
 
 export const metadata = { title: "Receipt · Haggl" };
@@ -17,7 +18,7 @@ export const metadata = { title: "Receipt · Haggl" };
 export default function ReceiptPage({ params, searchParams }: PageProps<"/receipt/[purchaseId]">) {
   return (
     <>
-      <TopBar home crumbs={["Receipt"]} />
+      <TopBar home crumbs={["Receipt"]} right={<HistoryLink />} />
       <main className="flex flex-1 items-start justify-center px-4 pt-[10vh] pb-10">
         <Suspense fallback={<Shell />}>
           <Receipt params={params} searchParams={searchParams} />
