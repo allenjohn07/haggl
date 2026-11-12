@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeftRightIcon, LinkIcon, PlusIcon, XIcon } from "lucide-react";
+import { ArrowLeftRightIcon, PlusIcon, XIcon } from "lucide-react";
 import type { ProductCard } from "@/lib/types";
 import { Said } from "@/components/pixel/Speech";
 import { Button } from "@/components/ui/button";
