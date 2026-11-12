@@ -121,7 +121,7 @@ One shared file, `styles/tokens.css`, owned by the `ui` lane; `app/globals.css` 
 
 ## Routes (pages)
 
-`/` is the landing page (hero with a looping mini-debate, how it works, trust points). `/app` is the app (search, debate, verdict). `/history`, `/receipt/<id>`. Links that start something new go to `/app`; the wordmark goes to `/`.
+`/` is a one-screen landing page (headline, one call to action, an animated glyph-ember field). `/app` is the app (search, debate, verdict). `/history`, `/receipt/<id>`. Links that start something new go to `/app`; the wordmark goes to `/`.
 
 ## Search typeahead, store links and sounds (UI only)
 
