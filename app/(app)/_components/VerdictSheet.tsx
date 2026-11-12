@@ -68,7 +68,7 @@ export function VerdictSheet({ state, wide, onSkip }: { state: DebateState; wide
   const differs = v.productId !== product.id || v.offerId !== picked.offerId;
   const positive = v.call === "buy" || v.call === "buy_elsewhere";
   const compare = v.options?.length ? v.options : null;
-  const sheetWide = (compare?.length ?? 0) > 1;
+  const columns = compare?.length ?? 1;
 
   async function buy(target: Target) {
     sounds.buy();
@@ -126,7 +126,12 @@ export function VerdictSheet({ state, wide, onSkip }: { state: DebateState; wide
           side={wide ? "right" : "bottom"}
           showCloseButton={false}
           className={`gap-0 border-border bg-surface-2 p-0 shadow-[0_0_0_1px_rgb(0_0_0/0.2),0_16px_48px_rgb(0_0_0/0.45)] ${
-            wide ? (sheetWide ? "data-[side=right]:w-[600px] data-[side=right]:sm:max-w-[600px]" : "data-[side=right]:w-[440px] data-[side=right]:sm:max-w-[440px]") : "max-h-[90dvh] rounded-t-lg"
+            wide
+              ? columns > 2
+                ? "data-[side=right]:w-[860px] data-[side=right]:sm:max-w-[min(860px,100vw)]"
+                : columns > 1
+                  ? "data-[side=right]:w-[600px] data-[side=right]:sm:max-w-[600px]"
+                  : "data-[side=right]:w-[440px] data-[side=right]:sm:max-w-[440px]" : "max-h-[90dvh] rounded-t-lg"
           }`}
         >
           <div className="flex h-12 shrink-0 items-center justify-between border-b border-border pr-2 pl-5">

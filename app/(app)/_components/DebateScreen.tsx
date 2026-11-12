@@ -113,15 +113,17 @@ function Trouble({ state, onRetry, onBack }: { state: DebateState; onRetry: () =
 export function DebateScreen({
   product,
   picked,
+  compare,
   onBack,
   onSkip,
 }: {
   product: ProductCard;
   picked: Offer;
+  compare?: ProductCard; // a product the user brought from a link
   onBack: () => void;
   onSkip: (kept: number) => void;
 }) {
-  const { state, answer, retry } = useDebate(product.id, picked.offerId, { product, picked });
+  const { state, answer, retry } = useDebate(product.id, picked.offerId, { product, picked }, compare?.id);
   const wide = useWide();
   const [transcript, setTranscript] = useState(false);
   const trouble = state.status === "error" || state.status === "busy";

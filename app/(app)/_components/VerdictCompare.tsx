@@ -9,7 +9,7 @@ import { StoreLink } from "./StoreLink";
 export function VerdictCompare({ options }: { options: VerdictOption[] }) {
   const cheapest = Math.min(...options.map((o) => o.price));
   return (
-    <div className={`grid gap-3 ${options.length > 1 ? "sm:grid-cols-2" : ""}`}>
+    <div className={`grid gap-3 ${options.length > 2 ? "sm:grid-cols-3" : options.length > 1 ? "sm:grid-cols-2" : ""}`}>
       {options.map((o) => (
         <Option key={`${o.productId}:${o.offerId}`} o={o} single={options.length === 1} cheapest={options.length > 1 && o.price === cheapest} />
       ))}
@@ -18,7 +18,17 @@ export function VerdictCompare({ options }: { options: VerdictOption[] }) {
 }
 
 function Option({ o, single, cheapest }: { o: VerdictOption; single: boolean; cheapest: boolean }) {
-  const label = single ? (o.picked ? "Your pick, and theirs" : "Their pick") : o.recommended ? "Their pick" : "Your pick";
+  const label = single
+    ? o.picked
+      ? "Your pick, and theirs"
+      : "Their pick"
+    : o.recommended
+      ? o.linked
+        ? "Their pick (your link)"
+        : "Their pick"
+      : o.linked
+        ? "From your link"
+        : "Your pick";
   return (
     <article
       className={`flex flex-col gap-3 rounded-lg border p-3 ${o.recommended ? "border-primary/40 bg-primary/[0.06]" : "border-border bg-surface"}`}

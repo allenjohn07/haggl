@@ -76,7 +76,7 @@ function verdictMoods(v: Verdict): Record<Advisor, PixelState> {
   return v.call === "buy" || v.call === "buy_elsewhere" ? { spark: "cheer", penny: "cheer" } : { spark: "sulk", penny: "cheer" };
 }
 
-export function useDebate(productId: string, offerId: string, initial: { product: ProductCard; picked: Offer }) {
+export function useDebate(productId: string, offerId: string, initial: { product: ProductCard; picked: Offer }, compareId?: string) {
   const [state, setState] = useState<DebateState>(() => fresh(initial));
   const [run, setRun] = useState(0);
   const last = useRef<Record<string, string>>({});
@@ -116,7 +116,7 @@ export function useDebate(productId: string, offerId: string, initial: { product
     (async () => {
       let res: Response;
       try {
-        res = await api.debate(productId, offerId, signal);
+        res = await api.debate(productId, offerId, signal, compareId);
       } catch {
         if (!signal.aborted) fail("failed");
         return;
@@ -221,7 +221,7 @@ export function useDebate(productId: string, offerId: string, initial: { product
 
     return () => ctrl.abort();
     // `run` restarts the debate on retry.
-  }, [productId, offerId, run]);
+  }, [productId, offerId, compareId, run]);
 
   const answer = useCallback(
     (ask: Ask, choice: string) => {

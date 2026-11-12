@@ -115,3 +115,20 @@ export function mapProduct(r: C3Product): Product | null {
     offers,
   };
 }
+
+// POST /v1/lookup: any product page URL -> one product ({ product }). Channel3 fetches pages
+// outside its catalog live, so this can take a few seconds. Returns null if it has no usable offer.
+export async function c3Lookup(url: string): Promise<C3Result | null> {
+  const key = process.env.CHANNEL3_API_KEY;
+  if (!key) throw new Error("CHANNEL3_API_KEY is not set");
+  const res = await fetch(BASE + "/v1/lookup", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": key },
+    body: JSON.stringify({ url }),
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) throw new Error(`Channel3 /v1/lookup answered ${res.status}`);
+  const data = (await res.json()) as { product?: C3Product };
+  const product = data.product ? mapProduct(data.product) : null;
+  return product ? { product, category: data.product?.category?.title } : null;
+}

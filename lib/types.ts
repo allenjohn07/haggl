@@ -104,4 +104,5 @@ export type VerdictOption = {
   inStock: boolean;
   recommended: boolean;       // the verdict's pick
   picked: boolean;            // the user's original pick
+  linked?: boolean;           // the product the user brought from a pasted link
 };
