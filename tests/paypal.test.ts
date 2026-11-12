@@ -90,3 +90,30 @@ describe("captureOrder", () => {
     expect(JSON.stringify(captures[0].headers)).toContain("haggl-capture-ORDER-9");
   });
 });
+
+import { appUrl } from "@/lib/paypal/client";
+
+describe("appUrl (PayPal's return address)", () => {
+  afterEach(() => {
+    delete process.env.RENDER_EXTERNAL_URL;
+  });
+
+  it("uses APP_URL when it's a real address", () => {
+    process.env.APP_URL = "https://haggl.example/";
+    process.env.RENDER_EXTERNAL_URL = "https://other.onrender.com";
+    expect(appUrl("/api/capture")).toBe("https://haggl.example/api/capture");
+  });
+
+  it("never sends a buyer to localhost when running on Render", () => {
+    process.env.APP_URL = "http://localhost:3000";
+    process.env.RENDER_EXTERNAL_URL = "https://haggl-664a.onrender.com";
+    expect(appUrl("/receipt/x")).toBe("https://haggl-664a.onrender.com/receipt/x");
+    delete process.env.APP_URL;
+    expect(appUrl("/receipt/x")).toBe("https://haggl-664a.onrender.com/receipt/x");
+  });
+
+  it("keeps localhost for local development", () => {
+    process.env.APP_URL = "http://localhost:3000";
+    expect(appUrl("/app")).toBe("http://localhost:3000/app");
+  });
+});
