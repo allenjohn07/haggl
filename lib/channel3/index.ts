@@ -2,6 +2,7 @@ import { bestOffer, rememberProducts } from "@/lib/products";
 import type { Product } from "@/lib/types";
 import { c3Lookup, c3Search, c3Similar, type C3Result } from "./client";
 import { dedupe, multiStoreFirst } from "./dedupe";
+import { readProductPage } from "./page";
 import { fixtureSet, fixtureSetFor } from "./fixtures";
 
 // Product search and alternatives. Contract: docs/CONTRACTS.md.
@@ -102,7 +103,10 @@ export async function lookupProduct(url: string): Promise<Product | null> {
       return r ? [r] : [];
     });
     product = found[0] ?? null;
-  } else {
+  }
+  // Channel3 couldn't read it (or we're offline): read the page's own product data.
+  if (!product) product = await readProductPage(url);
+  if (!product && !live()) {
     const sample = fixtureSet(url.replace(/[^a-z0-9]+/gi, " ")).products[0];
     if (sample) {
       const price = bestOffer(sample).price;
