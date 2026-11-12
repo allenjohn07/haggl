@@ -328,8 +328,10 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
               </div>
             </div>
             <div className="flex gap-2">
-              <StoreLink url={selected.bestOffer.url} merchant={selected.bestOffer.merchant} className="flex-1 sm:flex-none" />
-              <Button onClick={() => onAsk(selected)} className="h-11 flex-1 gap-2 px-4 sm:h-8 sm:flex-none sm:px-3">
+              {/* Phones: a short "View" so the main button keeps its room. */}
+              <StoreLink url={selected.bestOffer.url} merchant={selected.bestOffer.merchant} compact className="shrink-0 px-3 sm:hidden" />
+              <StoreLink url={selected.bestOffer.url} merchant={selected.bestOffer.merchant} className="hidden sm:inline-flex" />
+              <Button onClick={() => onAsk(selected)} className="h-11 min-w-0 flex-1 gap-2 px-4 sm:h-8 sm:flex-none sm:px-3">
                 Ask Spark and Penny
                 <Kbd className="hidden bg-white/15 text-white/80 sm:inline-flex">↵</Kbd>
               </Button>
