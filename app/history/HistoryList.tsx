@@ -99,7 +99,6 @@ function Row({ e, onTranscript }: { e: HistoryEntry; onTranscript: () => void })
           <p className="line-clamp-1 text-[14px] text-foreground">{e.product.title}</p>
           <p className="mt-0.5 text-[12px] text-muted-foreground">
             {when(e.at)} · your pick <span className="num text-text-2">{money(e.picked.price)}</span> at {store(e.picked.merchant)}
-            {Array.isArray(e.compare) && e.compare.length > 0 && <> · compared with {e.compare.length}</>}
           </p>
           <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
             <span className="inline-flex items-center gap-1.5 text-foreground">

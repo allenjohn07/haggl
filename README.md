@@ -1,16 +1,29 @@
-# Haggl
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/haggl-wordmark-light.svg">
+    <img src="docs/brand/haggl-wordmark-dark.svg" alt="Haggl" width="168">
+  </picture>
+</p>
 
-**Two AI advisors argue about your purchase, so you don't overspend.**
+<p align="center"><b>Two AI advisors argue about your purchase, so you don't overspend.</b></p>
+
+<p align="center">
+  <a href="https://github.com/allenjohn07/haggl/actions/workflows/ci.yml"><img src="https://github.com/allenjohn07/haggl/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="https://github.com/allenjohn07/haggl/actions/workflows/codeql.yml"><img src="https://github.com/allenjohn07/haggl/actions/workflows/codeql.yml/badge.svg?branch=main" alt="CodeQL"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
+</p>
+
+<p align="center">
+  <a href="https://haggl-664a.onrender.com"><b>Live demo</b></a> · Built for the PayPal AI Hackathon (2026)
+</p>
 
 Spark says treat yourself. Penny checks every store. They ask you what matters, give you a straight verdict, and pay with PayPal only when you say yes.
-
-**[Live demo](https://haggl-664a.onrender.com)** · Built for the PayPal AI Hackathon (2026) · MIT license
 
 ![Haggl landing page](docs/screenshots/1-landing.png)
 
 ## What it does
 
-1. **Search or paste a link.** Real products and prices from many stores (Channel3), or any product page link.
+1. **Search.** Real products and prices from many stores (Channel3), shown as a grid. You can also paste a product link.
 2. **Watch the debate.** Spark (treat yourself) and Penny (frugal skeptic), two pixel-art AI agents, argue it out. Penny checks the same item at other stores and finds cheaper alternatives; Spark makes the case for buying.
 3. **Answer two questions.** They stop and ask what matters, like your budget or how often you'd use it, and your answers change the argument.
 4. **Get a verdict.** Buy, buy it cheaper elsewhere, wait, or skip, with a side-by-side comparison.
@@ -28,7 +41,7 @@ Search (Channel3) → Debate (two Claude agents with tools) → Your answers →
 
 - **AI.** Two Claude agents (Anthropic API, `claude-haiku-5-5` by default) take turns over a streamed connection (server-sent events). They call tools to check prices across stores, find cheaper alternatives and look at ratings, then write a joint verdict. On **Buy**, the agent closes the purchase by calling a `create_paypal_order` tool.
 - **PayPal.** That tool creates a PayPal **Orders v2** order (intent `CAPTURE`, USD) in the **sandbox**. You approve it in PayPal, and the app captures it exactly once, even if the page reloads.
-- **Channel3.** Supplies products, each store's offer and price, ratings, similar products, and lookups of pasted links.
+- **Channel3.** Supplies products, each store's offer and price, ratings, similar products, and lookups of pasted links (when a page can't be read, the product name in the link is matched instead).
 - **Trust by design.**
   - The server sets every price from the stored store offer; the browser and the AI never can.
   - An advisor can't quote a price nobody found.
