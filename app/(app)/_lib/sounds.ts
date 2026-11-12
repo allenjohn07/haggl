@@ -4,7 +4,9 @@ import { defineSound, ensureReady, setMasterVolume } from "@web-kits/audio";
 import type { Advisor } from "@/lib/types";
 
 // Small synthesized sounds (no audio files). Played only after the user has tapped something,
-// so browsers allow audio. Kept quiet on purpose: they should feel like UI, not a game.
+// so browsers allow audio. Soft by design, lifted by one master volume so they're audible on phone
+// and laptop speakers.
+const VOLUME = 2.6;
 
 const pop = (frequency: { start: number; end: number }, pan: number) =>
   defineSound({ source: { type: "sine", frequency }, envelope: { attack: 0.004, decay: 0.09 }, gain: 0.16, pan });
@@ -43,9 +45,16 @@ export function setSoundOn(on: boolean) {
   else setMasterVolume(0);
 }
 
+// iPhone: without this, the ring/silent switch mutes web audio entirely (Safari 16.4+).
+function playbackSession() {
+  const nav = navigator as Navigator & { audioSession?: { type: string } };
+  if (nav.audioSession) nav.audioSession.type = "playback";
+}
+
 function play(sound: ReturnType<typeof defineSound>) {
   if (!soundOn()) return;
   try {
+    setMasterVolume(VOLUME);
     sound({ jitter: { detune: 25, volume: 0.1 } });
   } catch {
     // Audio is a nicety; never let it break the debate.
@@ -55,9 +64,21 @@ function play(sound: ReturnType<typeof defineSound>) {
 // Call from a tap or key press: browsers (iPhone Safari especially) only start audio inside a user gesture.
 export function unlockSound() {
   if (!soundOn()) return;
+  playbackSession();
   ensureReady()
-    .then(() => setMasterVolume(1))
+    .then(() => setMasterVolume(VOLUME))
     .catch(() => {});
+}
+
+// Unlock on the first tap or key press anywhere, so even the very first interface sound plays.
+if (typeof window !== "undefined") {
+  const first = () => {
+    unlockSound();
+    window.removeEventListener("pointerdown", first, true);
+    window.removeEventListener("keydown", first, true);
+  };
+  window.addEventListener("pointerdown", first, true);
+  window.addEventListener("keydown", first, true);
 }
 
 // Interface sounds: each interaction has its own short, quiet voice.
@@ -69,8 +90,8 @@ const note = (type: "sine" | "triangle", frequency: number | { start: number; en
 });
 
 const UI = {
-  tap: defineSound(note("sine", 880, 0.035, 0.07)), // a generic button press
-  tick: defineSound(note("sine", 1320, 0.018, 0.035)), // moving through suggestions
+  tap: defineSound(note("sine", 880, 0.06, 0.08)), // a generic button press
+  tick: defineSound(note("sine", 1320, 0.035, 0.05)), // moving through suggestions
   search: defineSound({ layers: [note("sine", { start: 420, end: 760 }, 0.12, 0.09)] }), // a small rising swoosh
   pick: defineSound({ layers: [note("triangle", 587.33, 0.07, 0.09), note("triangle", 880, 0.09, 0.07, 0.05)] }), // two-note "selected"
   start: defineSound({ layers: [note("sine", 392, 0.1, 0.08), note("sine", 523.25, 0.1, 0.08, 0.07), note("sine", 659.25, 0.14, 0.07, 0.14)] }),
