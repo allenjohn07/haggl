@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { Volume2Icon, VolumeXIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { setSoundOn, soundOn } from "../_lib/sounds";
+import { setSoundOn, soundOn, sounds } from "../_lib/sounds";
 
 // Sound on/off, remembered in localStorage. Off on the server render, then the real value.
 const listeners = new Set<() => void>();
@@ -16,6 +16,7 @@ export function SoundToggle() {
   const on = useSyncExternalStore(subscribe, soundOn, () => false);
   const toggle = () => {
     setSoundOn(!on);
+    if (!on) sounds.tap(); // a little confirmation that sound is back on
     listeners.forEach((fn) => fn());
   };
   return (

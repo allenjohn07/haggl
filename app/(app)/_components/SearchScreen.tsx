@@ -12,6 +12,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { LINES, pickLine } from "@/data/lines";
 import { SUGGESTIONS } from "@/data/fixtures/suggestions";
 import { suggest } from "@/data/typeahead";
+import { sounds } from "../_lib/sounds";
 import { api } from "../_lib/api";
 import { money, store } from "../_lib/format";
 import { ProductImage } from "./ProductImage";
@@ -72,12 +73,14 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
     setQuery(text);
     setLastQuery(text);
     setStatus("searching");
+    sounds.search();
     setSelected(null);
     setLine(pickLine(LINES.spark.lookup, line));
     try {
       const res = await api.search(text);
       if (res.status === 429) {
         setStatus("busy");
+        sounds.error();
         setLine(pickLine(LINES.errors.busy));
         return;
       }
@@ -87,6 +90,7 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
       setStatus(body.products.length ? "done" : "empty");
     } catch {
       setStatus("failed");
+      sounds.error();
       setLine(pickLine(LINES.errors.failed));
     }
   }
@@ -132,9 +136,11 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
             if (e.key === "ArrowDown") {
               e.preventDefault();
               setHi((i) => (i + 1) % hints.length);
+              sounds.tick();
             } else if (e.key === "ArrowUp") {
               e.preventDefault();
               setHi((i) => (i <= 0 ? hints.length - 1 : i - 1));
+              sounds.tick();
             } else if (e.key === "Enter" && hi >= 0 && hi < hints.length) {
               e.preventDefault();
               search(hints[hi]);
@@ -268,7 +274,11 @@ export function SearchScreen({ onAsk }: { onAsk: (card: ProductCard) => void }) 
             </p>
             <ul className="grid grid-cols-2 gap-3 px-4 pb-4 sm:grid-cols-3 sm:px-6 lg:grid-cols-4 xl:grid-cols-5">
               {results.map((c) => (
-                <ProductTile key={c.id} card={c} selected={selected?.id === c.id} onPick={() => setSelected(c)} />
+                <ProductTile key={c.id} card={c} selected={selected?.id === c.id} onPick={() => {
+                    setSelected(c);
+                    sounds.pick();
+                  }}
+                />
               ))}
             </ul>
           </section>

@@ -5,6 +5,7 @@ import { Said } from "@/components/pixel/Speech";
 import { Button } from "@/components/ui/button";
 import { LINES, pickLine } from "@/data/lines";
 import { PayPalButton } from "@/app/(app)/_components/PayPalButton";
+import { sounds } from "@/app/(app)/_lib/sounds";
 
 // Re-creates the PayPal order for this purchase and goes back to PayPal. The price comes from the server.
 export function RetryPay({ purchaseId }: { purchaseId: string }) {
@@ -12,6 +13,7 @@ export function RetryPay({ purchaseId }: { purchaseId: string }) {
   const [line, setLine] = useState("");
 
   async function pay() {
+    sounds.buy();
     setState("paying");
     setLine(pickLine(LINES.spark.pay));
     try {

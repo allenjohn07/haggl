@@ -60,8 +60,43 @@ export function unlockSound() {
     .catch(() => {});
 }
 
+// Interface sounds: each interaction has its own short, quiet voice.
+const note = (type: "sine" | "triangle", frequency: number | { start: number; end: number }, decay: number, gain: number, delay = 0) => ({
+  source: { type, frequency },
+  envelope: { attack: 0.003, decay },
+  gain,
+  delay,
+});
+
+const UI = {
+  tap: defineSound(note("sine", 880, 0.035, 0.07)), // a generic button press
+  tick: defineSound(note("sine", 1320, 0.018, 0.035)), // moving through suggestions
+  search: defineSound({ layers: [note("sine", { start: 420, end: 760 }, 0.12, 0.09)] }), // a small rising swoosh
+  pick: defineSound({ layers: [note("triangle", 587.33, 0.07, 0.09), note("triangle", 880, 0.09, 0.07, 0.05)] }), // two-note "selected"
+  start: defineSound({ layers: [note("sine", 392, 0.1, 0.08), note("sine", 523.25, 0.1, 0.08, 0.07), note("sine", 659.25, 0.14, 0.07, 0.14)] }),
+  answer: defineSound({ layers: [note("triangle", 659.25, 0.06, 0.09), note("triangle", 987.77, 0.1, 0.07, 0.05)] }),
+  open: defineSound(note("sine", { start: 520, end: 700 }, 0.08, 0.06)), // a sheet sliding in
+  close: defineSound(note("sine", { start: 700, end: 480 }, 0.08, 0.06)), // and out
+  buy: defineSound({
+    layers: [note("triangle", 1046.5, 0.09, 0.08), note("triangle", 1318.51, 0.09, 0.08, 0.06), note("sine", 1567.98, 0.25, 0.07, 0.12)],
+  }), // a little "cha-ching"
+  skip: defineSound({ layers: [note("sine", 523.25, 0.1, 0.07), note("sine", 392, 0.16, 0.07, 0.08)] }), // a gentle step down
+  error: defineSound({ layers: [note("triangle", 220, 0.12, 0.08), note("triangle", 196, 0.16, 0.07, 0.09)] }),
+};
+
 export const sounds = {
   say: (who: Advisor) => play(SAY[who]),
   ask: () => play(ASK),
   verdict: () => play(VERDICT),
+  tap: () => play(UI.tap),
+  tick: () => play(UI.tick),
+  search: () => play(UI.search),
+  pick: () => play(UI.pick),
+  start: () => play(UI.start),
+  answer: () => play(UI.answer),
+  open: () => play(UI.open),
+  close: () => play(UI.close),
+  buy: () => play(UI.buy),
+  skip: () => play(UI.skip),
+  error: () => play(UI.error),
 };

@@ -108,6 +108,7 @@ export function useDebate(productId: string, offerId: string, initial: { product
     // When an advisor starts working, the other keeps their last message (the point being answered), not a passing reaction.
     const keepSaid = (l: Line | null) => (l?.kind === "say" ? l : null);
     const fail = (kind: "failed" | "busy") => {
+      sounds.error();
       const errorLine = pickLine(LINES.errors[kind]);
       set((s) => ({ ...s, status: kind === "busy" ? "busy" : "error", lines: NO_LINES, ask: null, huddle: null, moods: { spark: "sulk", penny: "sulk" }, errorLine }));
     };
@@ -226,6 +227,7 @@ export function useDebate(productId: string, offerId: string, initial: { product
     (ask: Ask, choice: string) => {
       if (!state.debateId || state.ask?.askId !== ask.askId) return;
       answeredHere.current.add(ask.askId);
+      sounds.answer();
       const ack = (a: Advisor) => line("react", pick(`${a}.ack`, ACKS[a]));
       const spark = ack("spark");
       const penny = ack("penny");

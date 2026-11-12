@@ -16,6 +16,7 @@ import { api } from "../_lib/api";
 import { money, store } from "../_lib/format";
 import { PayPalButton } from "./PayPalButton";
 import { VerdictCompare } from "./VerdictCompare";
+import { sounds } from "../_lib/sounds";
 
 type Target = { productId: string; offerId: string };
 
@@ -70,6 +71,7 @@ export function VerdictSheet({ state, wide, onSkip }: { state: DebateState; wide
   const sheetWide = (compare?.length ?? 0) > 1;
 
   async function buy(target: Target) {
+    sounds.buy();
     setLastTarget(target);
     setBuying("paying");
     setPayLine(pickLine(LINES.spark.pay, payLine));
@@ -103,14 +105,23 @@ export function VerdictSheet({ state, wide, onSkip }: { state: DebateState; wide
     <>
       {!open && (
         <div className="anim-rise fixed inset-x-0 bottom-0 z-30 flex justify-center border-t border-border bg-surface-2 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:inset-x-auto sm:right-5 sm:bottom-5 sm:rounded-lg sm:border sm:p-2">
-          <Button variant="outline" onClick={() => setOpen(true)} className="h-11 w-full gap-2 sm:h-8 sm:w-auto">
+          <Button variant="outline" onClick={() => {
+              sounds.open();
+              setOpen(true);
+            }} className="h-11 w-full gap-2 sm:h-8 sm:w-auto">
             <span aria-hidden className={`size-1.5 rounded-full ${positive ? "bg-positive" : "bg-faint"}`} />
             Verdict: {callLabel(v, merchant)}
             <span className="text-muted-foreground">Open</span>
           </Button>
         </div>
       )}
-      <Sheet open={open} onOpenChange={setOpen}>
+      <Sheet
+        open={open}
+        onOpenChange={(o) => {
+          if (!o) sounds.close();
+          setOpen(o);
+        }}
+      >
         <SheetContent
           side={wide ? "right" : "bottom"}
           showCloseButton={false}
@@ -120,7 +131,10 @@ export function VerdictSheet({ state, wide, onSkip }: { state: DebateState; wide
         >
           <div className="flex h-12 shrink-0 items-center justify-between border-b border-border pr-2 pl-5">
             <span className="text-[13px] font-medium text-foreground">Verdict</span>
-            <Button variant="ghost" onClick={() => setOpen(false)} className="h-11 gap-2 px-2.5 text-[13px] text-muted-foreground sm:h-8">
+            <Button variant="ghost" onClick={() => {
+                sounds.close();
+                setOpen(false);
+              }} className="h-11 gap-2 px-2.5 text-[13px] text-muted-foreground sm:h-8">
               Back to the stage
               {wide && <Kbd className="border border-border bg-surface">Esc</Kbd>}
             </Button>
@@ -208,7 +222,13 @@ export function VerdictSheet({ state, wide, onSkip }: { state: DebateState; wide
                     Buy my original pick <span className="num text-muted-foreground">{money(picked.price)}</span>
                   </Button>
                 )}
-                <Button variant="ghost" onClick={onSkip} className="h-11 text-muted-foreground sm:h-9">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    sounds.skip();
+                    onSkip();
+                  }}
+                  className="h-11 text-muted-foreground sm:h-9">
                   Skip
                 </Button>
                 <p className="pt-1 text-center text-[12px] leading-relaxed text-muted-foreground">
